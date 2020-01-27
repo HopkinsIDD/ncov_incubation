@@ -153,6 +153,52 @@ ncov_inc_fit_asym
 
 ```
 
+We also made incubation estimates for the fever-only and foreign-only subsets.
+
+```{r fit subset dics, results='hide'}
+#make the data to pass in to dic.fit
+ncov_fever_dic <- ncov_fever %>% 
+    select(EL, ER, SL=SL_fever, SR=SR_fever) %>% 
+    mutate(type=0) %>% 
+    as.data.frame()
+
+ncov_foreign_dic <- ncov_foreign %>% 
+    select(EL, ER, SL, SR) %>% 
+    mutate(type=0) %>% 
+    as.data.frame()
+
+#fit it...use bootstrap interstions for now. MCMC better?
+ncov_fever_fit_asym <- dic.fit(ncov_fever_dic,dist="L",#n.boots=5000,
+                               ptiles = c(0.05, 0.25, 0.5, 0.75, 0.95))
+
+# ncov_fever_fit_boot <- dic.fit(ncov_fever_dic,dist="L", n.boots=5000,
+#                              ptiles = c(0.05, 0.25, 0.5, 0.75, 0.95))
+
+ncov_foreign_fit_asym <- dic.fit(ncov_foreign_dic,dist="L",#n.boots=5000,
+                               ptiles = c(0.05, 0.25, 0.5, 0.75, 0.95))
+
+# ncov_foreign_fit_boot <- dic.fit(ncov_foreign_dic,dist="L", n.boots=5000,
+#                              ptiles = c(0.05, 0.25, 0.5, 0.75, 0.95))
+```
+
+```{r subset-dic-plots}
+## plot the boot fit and table of intervals
+# plot(ncov_fever_fit_boot, main="bootstrap results (fever only)")
+# ncov_fever_fit_boot
+
+## plot the asymptotic fit and table of intervals
+plot(ncov_fever_fit_asym, main="asymptotic results (fever only)")
+ncov_fever_fit_asym
+
+## plot the boot fit and table of intervals
+# plot(ncov_foreign_fit_boot, main="bootstrap results (foreign only)")
+# ncov_foreign_fit_boot
+
+## plot the asymptotic fit and table of intervals
+plot(ncov_foreign_fit_asym, main="asymptotic results (foreign only)")
+ncov_foreign_fit_asym
+```
+
 
 # Combined stan analysis Lognomal for incubation period, Weibull for others
 
