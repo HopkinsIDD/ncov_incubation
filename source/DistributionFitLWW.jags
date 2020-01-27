@@ -1,0 +1,83 @@
+model {
+
+    for(i in dic){
+        #set up the censoring interval for the time of symptom onset
+        #if IPisCensored is 1 then Y_S is between the limits
+        IPisCensored[i] ~ dinterval( Y_S[i] , IPcensorLimitVec[i,1:2])
+        IPcensorLimitVec[i,1]<-max(0.000000001,(SL[i]-E[i]))
+        IPcensorLimitVec[i,2]<-max(0.000000001,(SR[i]-E[i]))
+
+        #declare the distribution of time of symptom onset and
+        Y_S[i] ~ dlnorm(lm,  tau1)
+
+        #declare the distribution of time of exposure...assume EL[i]=0
+        E[i] ~ dunif(0,ER[i])
+    }
+
+    #Adic is alist of interval censored serolgic observations
+    for(i in Adic){
+        #set up the censoring interval for the time of seroconversion
+        #if ASPisCensored is 1 then Y_S is between the limits
+    	ASPisCensored[i] ~ dinterval( Y_A[i] , ASPcensorLimitVec[i,1:2])
+        ASPcensorLimitVec[i,1]<-max(0.000000001,(AL[i]-E[i]))
+        ASPcensorLimitVec[i,2]<-max(0.000000001,(AR[i]-E[i]))
+
+        #declare time to seroconverison as follwing a weibull distribution
+        Y_A[i] ~ dweib(v_a,  lambda_a)
+
+    }
+
+    for(i in Arc){
+        #censoring is 2, so this is a right censored observation
+        #hence beyond the second entry in the censor limit cector
+    	ASPisCensored[i] ~ dinterval( Y_A[i] , ASPcensorLimitVecS[i,1:2])
+        ASPcensorLimitVecS[i,1]<-0
+	ASPcensorLimitVecS[i,2]<-max(0.000000001,(AL[i]-E[i]))
+
+        Y_A[i] ~ dweib( v_a,  lambda_a)
+    }
+
+
+
+    for(i in Vdic){
+    	#set up the censoring interval for the time of seroconversion
+        #if VSPisCensored is 1 then Y_V is between the limits
+    	VSPisCensored[i] ~ dinterval( Y_V[i] , VSPcensorLimitVec[i,1:2])
+        VSPcensorLimitVec[i,1]<-max(0.000000001,(VL[i]-E[i]))
+        VSPcensorLimitVec[i,2]<-max(0.000000001,(VR[i]-E[i]))
+
+        Y_V[i] ~ dweib(v_v,  lambda_v)
+
+    }
+
+    for(i in Vrc){
+        #censoring is 2, so this is a right censored observation
+        #hence beyond the second entry in the censor limit cector
+    	VSPisCensored[i] ~ dinterval( Y_V[i] , VSPcensorLimitVecS[i,1:2])
+        VSPcensorLimitVecS[i,1]<-0
+	VSPcensorLimitVecS[i,2]<-max(0.000000001,(VL[i]-E[i]))
+
+        Y_V[i] ~ dweib(v_v,  lambda_v)
+    }
+
+
+    #priors and transformations for symptom onset log normal
+    lm~dnorm(0,0.001)
+    tau1 <-1/lsd^2
+    lsd~dunif(0,3)
+
+
+    #priors and transformation for seroconversion distribution
+    v_a~dgamma(1,1)
+    lambda_a<-(1/scale_a)^(v_a)
+    scale_a~dunif(0,100)
+
+    #priors and transformation for viral clearance distribution
+    v_v~dgamma(1,1)
+    lambda_v<-(1/scale_v)^(v_v)
+    scale_v~dunif(0,100)
+
+
+
+
+    }
