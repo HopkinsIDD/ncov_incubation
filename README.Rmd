@@ -428,7 +428,7 @@ all_est_plot <- ncov_inc_fit_asym@ests[-2, -4] %>%
 ggplot(data=all_est_plot,
        aes(y=qtile_50, ymin=qtile_2.5, ymax=qtile_97.5, x=paste(study, type),
            color=study)) +
-    geom_errorbar(height=0.2, position=position_dodge(0.9)) +
+    geom_errorbar(width=0.2, position=position_dodge(0.9)) +
     geom_point(position=position_dodge(0.9)) +
     scale_y_continuous("Incubation time, in days (with 95% windows)",
                        limits=c(0,16)) +
