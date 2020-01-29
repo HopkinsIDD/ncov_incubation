@@ -1,7 +1,7 @@
 Real-time estimation of the Wuhan coronavirus incubation time
 =============================================================
 
-Updated: Tue Jan 28 20:18:30 2020
+Updated: Tue Jan 28 21:57:22 2020
 
 Our lab has been collecting data on the exposure and symptom onset for
 Wuhan novel coronavirus (nCoV-2019) cases that have been confirmed
@@ -56,10 +56,8 @@ Incubation period estimates
 ---------------------------
 
 We estimate the incubation period using the package based on the paper
-by Reich *et al*, 2009, adapting code originally written for determining
-the incubation period of Zika virus (Lessler *et al*, 2016). We assume a
-log-normal incubation period and using a bootstrap method for
-calculating confidence intervals.
+by Reich *et al*, 2009. We assume a log-normal incubation period and
+using a bootstrap method for calculating confidence intervals.
 
 The first model we fit is to all of the data and output the median,
 2.5th, and 97.5th quantiles (and their confidence intervals):
@@ -139,72 +137,7 @@ unknown ELs can be assumed to be 2019 December 1 (Nextstrain estimates
 that it could have happened as early as September), by setting unknown
 ELs to 2018 December 1.
 
-    ## Warning in dic.fit(ncov_fever_dic, dist = "L", n.boots = 1000, ptiles = c(0.025, : Could not estimate the MLEs for 20 of 1000 bootstrap replications. Excluding these from the calculation of confidence intervals and standard errors so interpret with caution.
-
-<img src="README_files/figure-markdown_strict/fever-dic-plots-1.png" style="display: block; margin: auto;" />
-
-<table>
-<thead>
-<tr class="header">
-<th></th>
-<th style="text-align: right;">est</th>
-<th style="text-align: right;">CIlow</th>
-<th style="text-align: right;">CIhigh</th>
-<th style="text-align: right;">diff</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>p2.5</td>
-<td style="text-align: right;">2.919</td>
-<td style="text-align: right;">2.238</td>
-<td style="text-align: right;">4.772</td>
-<td style="text-align: right;">0.377</td>
-</tr>
-<tr class="even">
-<td>p5</td>
-<td style="text-align: right;">3.257</td>
-<td style="text-align: right;">2.593</td>
-<td style="text-align: right;">4.981</td>
-<td style="text-align: right;">0.407</td>
-</tr>
-<tr class="odd">
-<td>p25</td>
-<td style="text-align: right;">4.561</td>
-<td style="text-align: right;">3.902</td>
-<td style="text-align: right;">5.863</td>
-<td style="text-align: right;">0.509</td>
-</tr>
-<tr class="even">
-<td>p50</td>
-<td style="text-align: right;">5.765</td>
-<td style="text-align: right;">4.769</td>
-<td style="text-align: right;">7.291</td>
-<td style="text-align: right;">0.591</td>
-</tr>
-<tr class="odd">
-<td>p75</td>
-<td style="text-align: right;">7.286</td>
-<td style="text-align: right;">5.388</td>
-<td style="text-align: right;">9.559</td>
-<td style="text-align: right;">0.678</td>
-</tr>
-<tr class="even">
-<td>p95</td>
-<td style="text-align: right;">10.205</td>
-<td style="text-align: right;">6.109</td>
-<td style="text-align: right;">15.285</td>
-<td style="text-align: right;">0.811</td>
-</tr>
-<tr class="odd">
-<td>p97.5</td>
-<td style="text-align: right;">11.385</td>
-<td style="text-align: right;">6.383</td>
-<td style="text-align: right;">17.998</td>
-<td style="text-align: right;">0.854</td>
-</tr>
-</tbody>
-</table>
+<img src="README_files/figure-markdown_strict/all-est-plot-1.png" style="display: block; margin: auto;" />
 
 Using only fevers, the estimates are 0.377 to 0.854 days longer than the
 estimates on the full data. 8 of the cases with a fever reported having
@@ -213,146 +146,15 @@ exposure to cause a fever, the estimates are similar to those of the
 overall results. The confidence intervals are wider here at every
 quantile due to having less data.
 
-    ## Warning in dic.fit(ncov_foreign_dic, dist = "L", n.boots = 1000, ptiles = c(0.025, : Could not estimate the MLEs for 1 of 1000 bootstrap replications. Excluding these from the calculation of confidence intervals and standard errors so interpret with caution.
-
-<img src="README_files/figure-markdown_strict/foreign-dic-plots-1.png" style="display: block; margin: auto;" />
-
-<table>
-<thead>
-<tr class="header">
-<th></th>
-<th style="text-align: right;">est</th>
-<th style="text-align: right;">CIlow</th>
-<th style="text-align: right;">CIhigh</th>
-<th style="text-align: right;">diff</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>p2.5</td>
-<td style="text-align: right;">2.451</td>
-<td style="text-align: right;">1.671</td>
-<td style="text-align: right;">3.886</td>
-<td style="text-align: right;">-0.091</td>
-</tr>
-<tr class="even">
-<td>p5</td>
-<td style="text-align: right;">2.803</td>
-<td style="text-align: right;">2.006</td>
-<td style="text-align: right;">4.146</td>
-<td style="text-align: right;">-0.047</td>
-</tr>
-<tr class="odd">
-<td>p25</td>
-<td style="text-align: right;">4.235</td>
-<td style="text-align: right;">3.394</td>
-<td style="text-align: right;">5.394</td>
-<td style="text-align: right;">0.183</td>
-</tr>
-<tr class="even">
-<td>p50</td>
-<td style="text-align: right;">5.643</td>
-<td style="text-align: right;">4.487</td>
-<td style="text-align: right;">7.045</td>
-<td style="text-align: right;">0.469</td>
-</tr>
-<tr class="odd">
-<td>p75</td>
-<td style="text-align: right;">7.519</td>
-<td style="text-align: right;">5.525</td>
-<td style="text-align: right;">9.712</td>
-<td style="text-align: right;">0.911</td>
-</tr>
-<tr class="even">
-<td>p95</td>
-<td style="text-align: right;">11.362</td>
-<td style="text-align: right;">7.132</td>
-<td style="text-align: right;">16.081</td>
-<td style="text-align: right;">1.968</td>
-</tr>
-<tr class="odd">
-<td>p97.5</td>
-<td style="text-align: right;">12.992</td>
-<td style="text-align: right;">7.600</td>
-<td style="text-align: right;">19.167</td>
-<td style="text-align: right;">2.461</td>
-</tr>
-</tbody>
-</table>
-
 Using only cases from outside of Mainland China, the estimates are
 -0.091 to 2.461 days longer than the estimates on the full data. There
 is a bit of a gap on the long end of the tail, but the confidence
 intervals overlap for the most part.
-
-<img src="README_files/figure-markdown_strict/year-dic-plots-1.png" style="display: block; margin: auto;" />
-
-<table>
-<thead>
-<tr class="header">
-<th></th>
-<th style="text-align: right;">est</th>
-<th style="text-align: right;">CIlow</th>
-<th style="text-align: right;">CIhigh</th>
-<th style="text-align: right;">diff</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>p2.5</td>
-<td style="text-align: right;">2.540</td>
-<td style="text-align: right;">1.795</td>
-<td style="text-align: right;">3.499</td>
-<td style="text-align: right;">-0.002</td>
-</tr>
-<tr class="even">
-<td>p5</td>
-<td style="text-align: right;">2.855</td>
-<td style="text-align: right;">2.116</td>
-<td style="text-align: right;">3.745</td>
-<td style="text-align: right;">0.005</td>
-</tr>
-<tr class="odd">
-<td>p25</td>
-<td style="text-align: right;">4.094</td>
-<td style="text-align: right;">3.459</td>
-<td style="text-align: right;">4.927</td>
-<td style="text-align: right;">0.042</td>
-</tr>
-<tr class="even">
-<td>p50</td>
-<td style="text-align: right;">5.260</td>
-<td style="text-align: right;">4.509</td>
-<td style="text-align: right;">6.282</td>
-<td style="text-align: right;">0.086</td>
-</tr>
-<tr class="odd">
-<td>p75</td>
-<td style="text-align: right;">6.759</td>
-<td style="text-align: right;">5.441</td>
-<td style="text-align: right;">8.631</td>
-<td style="text-align: right;">0.151</td>
-</tr>
-<tr class="even">
-<td>p95</td>
-<td style="text-align: right;">9.693</td>
-<td style="text-align: right;">6.875</td>
-<td style="text-align: right;">14.368</td>
-<td style="text-align: right;">0.299</td>
-</tr>
-<tr class="odd">
-<td>p97.5</td>
-<td style="text-align: right;">10.897</td>
-<td style="text-align: right;">7.362</td>
-<td style="text-align: right;">16.988</td>
-<td style="text-align: right;">0.366</td>
-</tr>
-</tbody>
-</table>
 
 When we set the unknown ELs to 2018 December 1 instead of 2019 December
 1, the estimates are -0.002 to 0.366 days longer than the estimates on
 the full data. Somewhat surprisingly, this changes the estimates less
 than either of the other alternate estimates.
 
-<img src="README_files/figure-markdown_strict/all-est-plot-1.png" style="display: block; margin: auto;" />
+*(Qulu Zheng, Hannah Meredith, Kyra Grantz, Qifang Bi, Forrest Jones,
+and Stephen Lauer all contributed to this project)*

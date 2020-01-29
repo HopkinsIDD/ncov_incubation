@@ -5,7 +5,7 @@ output: md_document
 
 ```{r opts, include=FALSE}
 knitr::opts_knit$set(root.dir = here::here())
-knitr::opts_chunk$set(echo=F, message=T, warning=T, eval=T,
+knitr::opts_chunk$set(echo=F, message=F, warning=F, eval=T,
                       fig.align='center',fig.pos='ht')
 ```
 
@@ -130,15 +130,16 @@ ggplot(dat_sum, aes(y=factor(UID))) +
     geom_segment(aes(x=SLnew, xend=SRnew, yend=factor(UID)), 
                  size=2, color="red", alpha=.5) +
     ggtitle("Exposure and symptom onset windows") +
-    scale_x_continuous("Days since ER") +
-    ylab("UID") +
+    scale_x_continuous("Days since exposure (ER)") +
+    scale_y_discrete("UID") +
     theme_bw() +
-    theme(axis.text.y = element_text(size=6))
+    theme(axis.text.y = element_blank(),
+          axis.ticks.y= element_blank())
 ```
 
 ## Incubation period estimates
 
-We estimate the incubation period using the \texttt{coarseDataTools} package based on the paper by Reich *et al*, 2009, adapting code originally written for determining the incubation period of Zika virus (Lessler *et al*, 2016).
+We estimate the incubation period using the \texttt{coarseDataTools} package based on the paper by Reich *et al*, 2009.
 We assume a log-normal incubation period and using a bootstrap method for calculating confidence intervals.
 
 The first model we fit is to all of the data and output the median, 2.5th, and 97.5th quantiles (and their confidence intervals):
@@ -160,7 +161,8 @@ ncov_inc_fit_boot <- dic.fit(ncov_inc_dat,dist="L", n.boots=1000,
 
 ```{r dic-plots}
 ## plot the boot fit and table of intervals
-plot(ncov_inc_fit_boot, main="overall results")
+plot(ncov_inc_fit_boot, main="CDF of incubation times",
+     xlab="Incubation time, in days", ylab="", xlim=c(0,20))
 
 knitr::kable(ncov_inc_fit_boot@ests[-c(1:2),-4])
 
@@ -194,7 +196,7 @@ ncov_fever_fit_boot <- dic.fit(ncov_fever_dic,dist="L", n.boots=1000,
                              ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
 ```
 
-```{r fever-dic-plots}
+```{r fever-dic-plots, eval=F}
 ## plot the boot fit and table of intervals
 plot(ncov_fever_fit_boot, main="fever-only results")
 
@@ -208,11 +210,6 @@ knitr::kable(fever_tbl)
 # plot(ncov_fever_fit_asym, main="asymptotic results (fever only)")
 # ncov_fever_fit_asym
 ```
-
-Using only fevers, the estimates are `r min(ncov_fever_fit_boot@ests[-c(1:2),"est"]-ncov_inc_fit_boot@ests[-c(1:2),"est"])` to `r max(ncov_fever_fit_boot@ests[-c(1:2),"est"]-ncov_inc_fit_boot@ests[-c(1:2),"est"])` days longer than the estimates on the full data.
-`r sum(ncov_fever$SR<ncov_fever$SR_fever)` of the cases with a fever reported having other symptoms beforehand.
-While it may take a little longer for an exposure to cause a fever, the estimates are similar to those of the overall results.
-The confidence intervals are wider here at every quantile due to having less data.
 
 ```{r fit-foreign-dics, results='hide', cache=T}
 ncov_foreign_dic <- ncov_foreign %>% 
@@ -228,7 +225,7 @@ ncov_foreign_fit_boot <- dic.fit(ncov_foreign_dic,dist="L", n.boots=1000,
 
 ```
 
-```{r foreign-dic-plots}
+```{r foreign-dic-plots, eval=F}
 ## plot the boot fit and table of intervals
 plot(ncov_foreign_fit_boot, main="non-Mainland results")
 
@@ -262,9 +259,6 @@ ncov_foreign_fever_fit_boot <- dic.fit(ncov_foreign_fever_dic,dist="L",
 plot(ncov_foreign_fever_fit_asym, main="asymptotic results (foreign only)")
 ncov_foreign_fever_fit_asym
 ```
-
-Using only cases from outside of Mainland China, the estimates are `r min(ncov_foreign_fit_boot@ests[-c(1:2),"est"]-ncov_inc_fit_boot@ests[-c(1:2),"est"])` to `r max(ncov_foreign_fit_boot@ests[-c(1:2),"est"]-ncov_inc_fit_boot@ests[-c(1:2),"est"])` days longer than the estimates on the full data.
-There is a bit of a gap on the long end of the tail, but the confidence intervals overlap for the most part.
 
 ```{r fit-year-dics, results='hide', cache=T}
 ## change dates to restrict exposure to after December 1
@@ -324,7 +318,7 @@ ncov_year_fit_boot <- dic.fit(ncov_year_dic,dist="L", n.boots=1000,
 
 ```
 
-```{r year-dic-plots}
+```{r year-dic-plots, eval=F}
 ## plot the boot fit and table of intervals
 plot(ncov_year_fit_boot, main="EL-2018 results")
 
@@ -334,46 +328,24 @@ year_tbl$diff <- ncov_year_fit_boot@ests[-c(1:2), "est"] - ncov_inc_fit_boot@est
 knitr::kable(year_tbl)
 ```
 
-When we set the unknown ELs to 2018 December 1 instead of 2019 December 1, the estimates are `r min(ncov_year_fit_boot@ests[-c(1:2),"est"]-ncov_inc_fit_boot@ests[-c(1:2),"est"])` to `r max(ncov_year_fit_boot@ests[-c(1:2),"est"]-ncov_inc_fit_boot@ests[-c(1:2),"est"])` days longer than the estimates on the full data.
-Somewhat surprisingly, this changes the estimates less than either of the other alternate estimates. 
-
-```{r stan-incubation, eval=FALSE}
-ncov_model <- stan_model("source/DistributionFitL.stan")
-
-inc_est <- sampling(ncov_model,
-                    data=list(N=nrow(ncov),
-                              EL=ncov$EL,
-                              ER=ncov$ER,
-                              SL=ncov$SL,
-                              SR=ncov$SR),
-                    chains=1,
-                    iter=1000,
-                    warmup=500,
-                    control=list(adapt_delta=0.8,
-                                 max_treedepth=10),
-                    seed=1)
-```
-
-
-
 ```{r all-est-plot, warning=F, message=F}
-all_est_plot <- ncov_inc_fit_asym@ests[-c(1,2), -4] %>% 
+all_est_plot <- ncov_inc_fit_boot@ests[-c(1,2), -4] %>% 
     as.data.frame() %>% 
     mutate(qtile=c(2.5, 5, 25, 50, 75, 95, 97.5),
            type="all") %>% 
-    bind_rows(ncov_fever_fit_asym@ests[-c(1,2), -4] %>% 
+    bind_rows(ncov_fever_fit_boot@ests[-c(1,2), -4] %>% 
                   as.data.frame() %>% 
                   # rename(est_fever=est, CIlow_fever=CIlow,
                   #        CIhigh_fever=CIhigh) %>% 
                   mutate(qtile=c(2.5, 5, 25, 50, 75, 95, 97.5),
                          type="fever")) %>% 
-    bind_rows(ncov_foreign_fit_asym@ests[-c(1,2), -4] %>% 
+    bind_rows(ncov_foreign_fit_boot@ests[-c(1,2), -4] %>% 
                   as.data.frame() %>% 
                   # rename(est_foreign=est, CIlow_foreign=CIlow,
                   #        CIhigh_foreign=CIhigh) %>% 
                   mutate(qtile=c(2.5, 5, 25, 50, 75, 95, 97.5),
                          type="non-Mainland")) %>% 
-    bind_rows(ncov_year_fit_asym@ests[-c(1,2), -4] %>% 
+    bind_rows(ncov_year_fit_boot@ests[-c(1,2), -4] %>% 
                   as.data.frame() %>% 
                   # rename(est_year=est, CIlow_year=CIlow,
                   #        CIhigh_year=CIhigh) %>% 
@@ -392,3 +364,16 @@ ggplot(data=all_est_plot,
     theme_bw() + coord_flip()
 ```
 
+Using only fevers, the estimates are `r min(ncov_fever_fit_boot@ests[-c(1:2),"est"]-ncov_inc_fit_boot@ests[-c(1:2),"est"])` to `r max(ncov_fever_fit_boot@ests[-c(1:2),"est"]-ncov_inc_fit_boot@ests[-c(1:2),"est"])` days longer than the estimates on the full data.
+`r sum(ncov_fever$SR<ncov_fever$SR_fever)` of the cases with a fever reported having other symptoms beforehand.
+While it may take a little longer for an exposure to cause a fever, the estimates are similar to those of the overall results.
+The confidence intervals are wider here at every quantile due to having less data.
+
+Using only cases from outside of Mainland China, the estimates are `r min(ncov_foreign_fit_boot@ests[-c(1:2),"est"]-ncov_inc_fit_boot@ests[-c(1:2),"est"])` to `r max(ncov_foreign_fit_boot@ests[-c(1:2),"est"]-ncov_inc_fit_boot@ests[-c(1:2),"est"])` days longer than the estimates on the full data.
+There is a bit of a gap on the long end of the tail, but the confidence intervals overlap for the most part.
+
+When we set the unknown ELs to 2018 December 1 instead of 2019 December 1, the estimates are `r min(ncov_year_fit_boot@ests[-c(1:2),"est"]-ncov_inc_fit_boot@ests[-c(1:2),"est"])` to `r max(ncov_year_fit_boot@ests[-c(1:2),"est"]-ncov_inc_fit_boot@ests[-c(1:2),"est"])` days longer than the estimates on the full data.
+Somewhat surprisingly, this changes the estimates less than either of the other alternate estimates. 
+
+
+*(Qulu Zheng, Hannah Meredith, Kyra Grantz, Qifang Bi, Forrest Jones, and Stephen Lauer all contributed to this project)*
