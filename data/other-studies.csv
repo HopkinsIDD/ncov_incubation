@@ -1,0 +1,26 @@
+﻿study,type,virus,qtile,est,CIlow,CIhigh
+Backer 2020,Weibull,nCoV,mean,5.8,4.6,7.9
+Backer 2020,Weibull,nCoV,95,10.3,7.9,17.3
+Backer 2020,Gamma,nCoV,mean,5.7,4.5,7.8
+Backer 2020,Gamma,nCoV,95,10.5,7.8,17
+Backer 2020,Lognormal,nCoV,mean,5.9,4.5,8.9
+Backer 2020,Lognormal,nCoV,95,12.6,8.4,24.5
+Donnelly 2003,,SARS,mean,6.4,5.2,7.7
+Donnelly 2003,,SARS,95,14.2,,
+Cowling 2007,,SARS,mean,5.1,4.6,5.5
+Cowling 2007,,SARS,95,12.9,11.7,14.5
+Cauchemez 2014,,MERS,mean,5.5,3.6,10.2
+Cauchemez 2014,,MERS,95,10.2,,
+Virlogeux 2016 (SK),,MERS,mean,6.9,6.3,7.5
+Virlogeux 2016 (SK),,MERS,95,12.7,11.5,14.4
+Virlogeux 2016 (SA),,MERS,mean,5,4,6.6
+Virlogeux 2016 (SA),,MERS,95,11.4,8.5,17.5
+Backer 2020,Weibull,nCoV,2.5,1.3,,
+Backer 2020,Weibull,nCoV,97.5,11.3,,
+Backer 2020,Weibull,nCoV,50,5.5,,
+Backer 2020,Gamma,nCoV,2.5,1.8,,
+Backer 2020,Gamma,nCoV,97.5,11.7,,
+Backer 2020,Gamma,nCoV,50,5.3,,
+Backer 2020,Lognormal,nCoV,2.5,1.7,,
+Backer 2020,Lognormal,nCoV,97.5,15,,
+Backer 2020,Lognormal,nCoV,50,5.1,,

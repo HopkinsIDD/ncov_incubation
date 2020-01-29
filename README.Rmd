@@ -1,6 +1,8 @@
 ---
 title: "Real-time estimation of the Wuhan coronavirus incubation time"
 output: md_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r opts, include=FALSE}
@@ -91,7 +93,7 @@ ncov_foreign_fever <- ncov_foreign %>%
 
 Updated: `r date()`
 
-Our lab has been collecting data on the exposure and symptom onset for Wuhan novel coronavirus (nCoV-2019) cases that have been confirmed outside of the Hubei province.
+Our lab has been collecting data (freely available at [`data/nCoV-IDD-traveler-data.csv`](https://github.com/HopkinsIDD/ncov_incubation/blob/master/data/nCoV-IDD-traveler-data.csv)) on the exposure and symptom onset for Wuhan novel coronavirus (nCoV-2019) cases that have been confirmed outside of the Hubei province.
 These cases have been confirmed either in other countries or in regions of China with no known local transmission.
 We search for news articles and reports in both English and Chinese and abstract the data necessary to estimate the incubation period of nCoV-2019.
 Two team members independently review the full text of each case report to ensure that data is correctly input.
@@ -139,7 +141,7 @@ ggplot(dat_sum, aes(y=factor(UID))) +
 
 ## Incubation period estimates
 
-We estimate the incubation period using the \texttt{coarseDataTools} package based on the paper by Reich *et al*, 2009.
+We estimate the incubation period using the coarseDataTools package based on the paper by [Reich *et al*, 2009](https://onlinelibrary.wiley.com/doi/pdf/10.1002/sim.3659).
 We assume a log-normal incubation period and using a bootstrap method for calculating confidence intervals.
 
 The first model we fit is to all of the data and output the median, 2.5th, and 97.5th quantiles (and their confidence intervals):
@@ -179,7 +181,7 @@ The fastest incubation periods pass in `r ncov_inc_fit_boot@ests["p2.5", "est"]`
 To make sure that our overall incubation estimates are sound, we ran a few analyses on subsets to see if the results held up.
 Since the winter often brings cold air and other pathogens that can cause sore throats and coughs, we ran an analysis using only cases that reported a fever.
 Since a plurality of our cases came from Mainland China, where assumptions about local transmission may be less firm, we ran an analysis without those cases.
-Finally, we challenge our assumption that unknown ELs can be assumed to be 2019 December 1 (Nextstrain estimates that it could have happened as early as September), by setting unknown ELs to 2018 December 1.
+Finally, we challenge our assumption that unknown ELs can be assumed to be 2019 December 1 ([Nextstrain estimates that it could have happened as early as September](https://nextstrain.org/ncov?dmax=2019-12-04&m=num_date)), by setting unknown ELs to 2018 December 1.
 
 ```{r fit-fever-dics, results='hide', cache=T}
 #make the data to pass in to dic.fit
@@ -329,35 +331,43 @@ knitr::kable(year_tbl)
 ```
 
 ```{r all-est-plot, warning=F, message=F}
-all_est_plot <- ncov_inc_fit_boot@ests[-c(1,2), -4] %>% 
+all_est_plot <- ncov_inc_fit_asym@ests[-2, -4] %>% 
     as.data.frame() %>% 
-    mutate(qtile=c(2.5, 5, 25, 50, 75, 95, 97.5),
+    mutate(qtile=c("mean", 2.5, 5, 25, 50, 75, 95, 97.5),
            type="all") %>% 
-    bind_rows(ncov_fever_fit_boot@ests[-c(1,2), -4] %>% 
+    bind_rows(ncov_fever_fit_asym@ests[-2, -4] %>% 
                   as.data.frame() %>% 
                   # rename(est_fever=est, CIlow_fever=CIlow,
                   #        CIhigh_fever=CIhigh) %>% 
-                  mutate(qtile=c(2.5, 5, 25, 50, 75, 95, 97.5),
+                  mutate(qtile=c("mean",2.5, 5, 25, 50, 75, 95, 97.5),
                          type="fever")) %>% 
-    bind_rows(ncov_foreign_fit_boot@ests[-c(1,2), -4] %>% 
+    bind_rows(ncov_foreign_fit_asym@ests[-2, -4] %>% 
                   as.data.frame() %>% 
                   # rename(est_foreign=est, CIlow_foreign=CIlow,
                   #        CIhigh_foreign=CIhigh) %>% 
-                  mutate(qtile=c(2.5, 5, 25, 50, 75, 95, 97.5),
+                  mutate(qtile=c("mean", 2.5, 5, 25, 50, 75, 95, 97.5),
                          type="non-Mainland")) %>% 
-    bind_rows(ncov_year_fit_boot@ests[-c(1,2), -4] %>% 
+    bind_rows(ncov_year_fit_asym@ests[-2, -4] %>% 
                   as.data.frame() %>% 
                   # rename(est_year=est, CIlow_year=CIlow,
                   #        CIhigh_year=CIhigh) %>% 
-                  mutate(qtile=c(2.5, 5, 25, 50, 75, 95, 97.5),
+                  mutate(qtile=c("mean", 2.5, 5, 25, 50, 75, 95, 97.5),
                          type="EL-2018")) %>% 
-    filter(qtile %in% c(2.5, 50, 97.5))
+    mutate(est=ifelse(qtile=="mean", exp(est), est),
+           CIlow=ifelse(qtile=="mean", exp(CIlow), CIlow),
+           CIhigh=ifelse(qtile=="mean", exp(CIhigh), CIhigh),
+           study="ours",
+           virus="nCoV") %>% 
+    # bind_rows(other_studies) %>% 
+    filter(qtile %in% c(2.5, 50, 97.5))# %>% 
+    # select(-CIhigh, -CIlow) %>% 
+    # spread(qtile, est, sep="_")
 
 ggplot(data=all_est_plot,
        aes(y=est, ymin=CIlow, ymax=CIhigh, x=as.factor(qtile), color=type)) +
     geom_errorbar(height=0.2, position=position_dodge(0.9)) +
     geom_point(position=position_dodge(0.9)) +
-    scale_y_continuous("Incubation time, in days") +
+    scale_y_continuous("Incubation time, in days (with 95% CIs)", limits=c(0,21)) +
     scale_x_discrete("Estimate quantile") +
     scale_color_manual("Est\ntype",
                        values=cbbPalette[c(2,6,4,7)]) +
@@ -375,5 +385,60 @@ There is a bit of a gap on the long end of the tail, but the confidence interval
 When we set the unknown ELs to 2018 December 1 instead of 2019 December 1, the estimates are `r min(ncov_year_fit_boot@ests[-c(1:2),"est"]-ncov_inc_fit_boot@ests[-c(1:2),"est"])` to `r max(ncov_year_fit_boot@ests[-c(1:2),"est"]-ncov_inc_fit_boot@ests[-c(1:2),"est"])` days longer than the estimates on the full data.
 Somewhat surprisingly, this changes the estimates less than either of the other alternate estimates. 
 
+## Comparison to Backer
+
+[Backer, Klinkenberg, & Wallinga](https://www.medrxiv.org/content/10.1101/2020.01.27.20018986v1.full.pdf+html) estimated the incubation windows based on 34 early nCoV cases that traveled from Wuhan to other regions in China.
+A comparison of our incubation windows are shown below:
+
+```{r comparison}
+other_studies <- read_csv("data/other-studies.csv")
+all_est_plot <- ncov_inc_fit_asym@ests[-2, -4] %>% 
+    as.data.frame() %>% 
+    mutate(qtile=c("mean", 2.5, 5, 25, 50, 75, 95, 97.5),
+           type="all") %>% 
+    bind_rows(ncov_fever_fit_asym@ests[-2, -4] %>% 
+                  as.data.frame() %>% 
+                  # rename(est_fever=est, CIlow_fever=CIlow,
+                  #        CIhigh_fever=CIhigh) %>% 
+                  mutate(qtile=c("mean",2.5, 5, 25, 50, 75, 95, 97.5),
+                         type="fever")) %>% 
+    bind_rows(ncov_foreign_fit_asym@ests[-2, -4] %>% 
+                  as.data.frame() %>% 
+                  # rename(est_foreign=est, CIlow_foreign=CIlow,
+                  #        CIhigh_foreign=CIhigh) %>% 
+                  mutate(qtile=c("mean", 2.5, 5, 25, 50, 75, 95, 97.5),
+                         type="non-Mainland")) %>% 
+    bind_rows(ncov_year_fit_asym@ests[-2, -4] %>% 
+                  as.data.frame() %>% 
+                  # rename(est_year=est, CIlow_year=CIlow,
+                  #        CIhigh_year=CIhigh) %>% 
+                  mutate(qtile=c("mean", 2.5, 5, 25, 50, 75, 95, 97.5),
+                         type="EL-2018")) %>% 
+    mutate(est=ifelse(qtile=="mean", exp(est), est),
+           CIlow=ifelse(qtile=="mean", exp(CIlow), CIlow),
+           CIhigh=ifelse(qtile=="mean", exp(CIhigh), CIhigh),
+           study="ours",
+           virus="nCoV") %>% 
+    bind_rows(other_studies) %>% 
+    filter(qtile %in% c(2.5, 50, 97.5)) %>% 
+    select(-CIhigh, -CIlow) %>% 
+    spread(qtile, est, sep="_")
+
+ggplot(data=all_est_plot,
+       aes(y=qtile_50, ymin=qtile_2.5, ymax=qtile_97.5, x=paste(study, type),
+           color=study)) +
+    geom_errorbar(height=0.2, position=position_dodge(0.9)) +
+    geom_point(position=position_dodge(0.9)) +
+    scale_y_continuous("Incubation time, in days (with 95% windows)",
+                       limits=c(0,16)) +
+    scale_x_discrete("") +
+    scale_color_manual("Est\ntype",
+                       values=cbbPalette[c(2,6,4,7)],
+                       guide="none") +
+    theme_bw() + coord_flip()
+```
+
+The median estimates from all models lie between `r min(all_est_plot$qtile_50)` and `r max(all_est_plot$qtile_50)`.
+The reduction in confidence interval widths may be due to the difference in the number of observations used to estimate each model.
 
 *(Qulu Zheng, Hannah Meredith, Kyra Grantz, Qifang Bi, Forrest Jones, and Stephen Lauer all contributed to this project)*

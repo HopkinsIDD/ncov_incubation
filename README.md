@@ -1,17 +1,19 @@
 Real-time estimation of the Wuhan coronavirus incubation time
 =============================================================
 
-Updated: Tue Jan 28 21:57:22 2020
+Updated: Wed Jan 29 00:22:45 2020
 
-Our lab has been collecting data on the exposure and symptom onset for
-Wuhan novel coronavirus (nCoV-2019) cases that have been confirmed
-outside of the Hubei province. These cases have been confirmed either in
-other countries or in regions of China with no known local transmission.
-We search for news articles and reports in both English and Chinese and
-abstract the data necessary to estimate the incubation period of
-nCoV-2019. Two team members independently review the full text of each
-case report to ensure that data is correctly input. Discrepancies are
-resolved by discussion and consensus.
+Our lab has been collecting data (freely available at
+[`data/nCoV-IDD-traveler-data.csv`](https://github.com/HopkinsIDD/ncov_incubation/blob/master/data/nCoV-IDD-traveler-data.csv))
+on the exposure and symptom onset for Wuhan novel coronavirus
+(nCoV-2019) cases that have been confirmed outside of the Hubei
+province. These cases have been confirmed either in other countries or
+in regions of China with no known local transmission. We search for news
+articles and reports in both English and Chinese and abstract the data
+necessary to estimate the incubation period of nCoV-2019. Two team
+members independently review the full text of each case report to ensure
+that data is correctly input. Discrepancies are resolved by discussion
+and consensus.
 
 Data summary
 ------------
@@ -55,9 +57,11 @@ those two bars overlap.
 Incubation period estimates
 ---------------------------
 
-We estimate the incubation period using the package based on the paper
-by Reich *et al*, 2009. We assume a log-normal incubation period and
-using a bootstrap method for calculating confidence intervals.
+We estimate the incubation period using the coarseDataTools package
+based on the paper by [Reich *et al*,
+2009](https://onlinelibrary.wiley.com/doi/pdf/10.1002/sim.3659). We
+assume a log-normal incubation period and using a bootstrap method for
+calculating confidence intervals.
 
 The first model we fit is to all of the data and output the median,
 2.5th, and 97.5th quantiles (and their confidence intervals):
@@ -133,9 +137,10 @@ and coughs, we ran an analysis using only cases that reported a fever.
 Since a plurality of our cases came from Mainland China, where
 assumptions about local transmission may be less firm, we ran an
 analysis without those cases. Finally, we challenge our assumption that
-unknown ELs can be assumed to be 2019 December 1 (Nextstrain estimates
-that it could have happened as early as September), by setting unknown
-ELs to 2018 December 1.
+unknown ELs can be assumed to be 2019 December 1 ([Nextstrain estimates
+that it could have happened as early as
+September](https://nextstrain.org/ncov?dmax=2019-12-04&m=num_date)), by
+setting unknown ELs to 2018 December 1.
 
 <img src="README_files/figure-markdown_strict/all-est-plot-1.png" style="display: block; margin: auto;" />
 
@@ -155,6 +160,21 @@ When we set the unknown ELs to 2018 December 1 instead of 2019 December
 1, the estimates are -0.002 to 0.366 days longer than the estimates on
 the full data. Somewhat surprisingly, this changes the estimates less
 than either of the other alternate estimates.
+
+Comparison to Backer
+--------------------
+
+[Backer, Klinkenberg, &
+Wallinga](https://www.medrxiv.org/content/10.1101/2020.01.27.20018986v1.full.pdf+html)
+estimated the incubation windows based on 34 early nCoV cases that
+traveled from Wuhan to other regions in China. A comparison of our
+incubation windows are shown below:
+
+<img src="README_files/figure-markdown_strict/comparison-1.png" style="display: block; margin: auto;" />
+
+The median estimates from all models lie between 5.1 and 5.765. The
+reduction in confidence interval widths may be due to the difference in
+the number of observations used to estimate each model.
 
 *(Qulu Zheng, Hannah Meredith, Kyra Grantz, Qifang Bi, Forrest Jones,
 and Stephen Lauer all contributed to this project)*
