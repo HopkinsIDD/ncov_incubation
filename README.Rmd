@@ -62,6 +62,10 @@ ncov <- ncov_ELSR %>%
            SR_fever=difftime(SR_fever,
                              ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
                as.numeric(),
+           PL=difftime(PL, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+               as.numeric(),
+           PR=difftime(PR, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+               as.numeric(),
            E_int=ER-EL,
            S_int=SR-SL,
            S_fever_int=SR_fever-SL_fever) %>% 
@@ -430,10 +434,18 @@ dic_lls <- tibble(dist=c("log-normal",
                        ncov_gam_fit_boot@loglik,
                        ncov_wei_fit_boot@loglik,
                        ncov_erl_fit@loglik))
+
+# ncov_gam_fit_boot
+# ncov_wei_fit_boot
+# ncov_erl_fit
 ```
 
 The median estimates are very similar across parameterizations, while the Weibull distribution has a slightly smaller value at the 2.5th percentile and the log-normal distribution has a slightly larger value at the 97.5th percentile.
 The log-likelihoods were very similar between distributions; the `r dic_lls$dist[which.max(dic_lls$ll)]` distribution having the largest log-likelihood (`r max(dic_lls$ll) %>% round(2)`) and the `r dic_lls$dist[which.min(dic_lls$ll)]` distribution having the smallest log-likelihood (`r min(dic_lls$ll) %>% round(2)`).
+
+The gamma distribution has an estimated shape parameter of `r ncov_gam_fit_boot@ests["shape","est"] %>% round(2)` (95% CI: `r ncov_gam_fit_boot@ests["shape","CIlow"] %>% round(2)`-`r ncov_gam_fit_boot@ests["shape","CIhigh"] %>% round(2)`) and a scale parameter of `r ncov_gam_fit_boot@ests["scale","est"] %>% round(2)` (95% CI: `r ncov_gam_fit_boot@ests["scale","CIlow"] %>% round(2)`-`r ncov_gam_fit_boot@ests["scale","CIhigh"] %>% round(2)`).
+The Weibull distribution has an estimated shape parameter of `r ncov_wei_fit_boot@ests["shape","est"] %>% round(2)` (95% CI: `r ncov_wei_fit_boot@ests["shape","CIlow"] %>% round(2)`-`r ncov_wei_fit_boot@ests["shape","CIhigh"] %>% round(2)`) and a scale parameter of `r ncov_wei_fit_boot@ests["scale","est"] %>% round(2)` (95% CI: `r ncov_wei_fit_boot@ests["scale","CIlow"] %>% round(2)`-`r ncov_wei_fit_boot@ests["scale","CIhigh"] %>% round(2)`).
+The Erlang distribution has an estimated shape parameter of `r ncov_erl_fit@ests["shape","est"] %>% round(2)` (95% CI: `r ncov_erl_fit@ests["shape","CIlow"] %>% round(2)`-`r ncov_erl_fit@ests["shape","CIhigh"] %>% round(2)`) and a scale parameter of `r ncov_erl_fit@ests["scale","est"] %>% round(2)` (95% CI: `r ncov_erl_fit@ests["scale","CIlow"] %>% round(2)`-`r ncov_erl_fit@ests["scale","CIhigh"] %>% round(2)`).
 
 ### Sensitivity analyses
 
@@ -442,7 +454,7 @@ Since the winter often brings cold air and other pathogens that can cause sore t
 Since a plurality of our cases came from Mainland China, where assumptions about local transmission may be less firm, we ran an analysis without those cases.
 Finally, we challenge our assumption that unknown ELs can be assumed to be 2019 December 1 ([Nextstrain estimates that it could have happened as early as September](https://nextstrain.org/ncov?dmax=2019-12-04&m=num_date)), by setting unknown ELs to 2018 December 1.
 
-```{r all-est-plot, warning=F, message=F}
+```{r all-sens-plot, warning=F, message=F}
 all_sens_plot <- ncov_inc_fit_boot@ests[-2, -4] %>% 
     as.data.frame() %>% 
     mutate(qtile=c("mean", 2.5, 5, 25, 50, 75, 95, 97.5),

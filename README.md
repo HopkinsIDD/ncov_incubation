@@ -1,7 +1,7 @@
 Real-time estimation of the Wuhan coronavirus incubation time
 =============================================================
 
-Updated: Wed Jan 29 14:30:41 2020
+Updated: Wed Jan 29 15:54:01 2020
 
 Our lab has been collecting data (freely available at
 [`data/nCoV-IDD-traveler-data.csv`](https://github.com/HopkinsIDD/ncov_incubation/blob/master/data/nCoV-IDD-traveler-data.csv))
@@ -172,6 +172,13 @@ distributions; the log-normal distribution having the largest
 log-likelihood (62.05) and the Erlang distribution having the smallest
 log-likelihood (60.96).
 
+The gamma distribution has an estimated shape parameter of 7.92 (95% CI:
+3.97-24.98) and a scale parameter of 0.69 (95% CI: 0.21-1.52). The
+Weibull distribution has an estimated shape parameter of 3.11 (95% CI:
+2.2-6.08) and a scale parameter of 6.11 (95% CI: 5.19-7.25). The Erlang
+distribution has an estimated shape parameter of 14 (95% CI: 5-21) and a
+scale parameter of 0.4 (95% CI: 0.26-1.11).
+
 ### Sensitivity analyses
 
 To make sure that our overall incubation estimates are sound, we ran a
@@ -186,7 +193,7 @@ that it could have happened as early as
 September](https://nextstrain.org/ncov?dmax=2019-12-04&m=num_date)), by
 setting unknown ELs to 2018 December 1.
 
-<img src="README_files/figure-markdown_strict/all-est-plot-1.png" style="display: block; margin: auto;" />
+<img src="README_files/figure-markdown_strict/all-sens-plot-1.png" style="display: block; margin: auto;" />
 
 Using only fevers, the estimates are 0.377 to 0.854 days longer than the
 estimates on the full data. 8 of the cases with a fever reported having
