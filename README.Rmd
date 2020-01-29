@@ -87,26 +87,6 @@ ncov_foreign_fever <- ncov_foreign %>%
     filter(!is.na(SL_fever) | !is.na(SR_fever))
 ```
 
-```{r data-summary, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="This figure displays the exposure and symptom onset windows for each case in our dataset, relative to the right-bound of the exposure window (ER). The blue bars indicate the the exposure windows and the red bars indicate the symptom onset windows for each case. Purple areas are where those two bars overlap."}
-dat_sum <- ncov %>%
-    mutate(ELnew = EL-ER,
-           ERnew = ER-ER,
-           SLnew = SL-ER,
-           SRnew = SR-ER)
-
-ggplot(dat_sum, aes(y=factor(UID))) + 
-    geom_segment(aes(x=ELnew, xend=ERnew, yend=factor(UID)), 
-                 color="blue", size=2) +
-    geom_segment(aes(x=SLnew, xend=SRnew, yend=factor(UID)), 
-                 size=2, color="red", alpha=.5) +
-    ggtitle("Exposure and symptom onset windows") +
-    scale_x_continuous("Days since exposure (ER)") +
-    scale_y_discrete("UID") +
-    theme_bw() +
-    theme(axis.text.y = element_blank(),
-          axis.ticks.y= element_blank())
-```
-
 ```{r fit-dic, results='hide', cache=T}
 set.seed(1)
 #make the data to pass in to dic.fit
@@ -123,7 +103,7 @@ ncov_inc_fit_boot <- dic.fit(ncov_inc_dat,dist="L", n.boots=1000,
                              ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
 ```
 
-```{r fit-dic-gamma, results='hide', cache=T}
+```{r fit-dic-gamma, results='hide', cache=T, eval=F}
 set.seed(1)
 
 #fit it...use bootstrap interstions for now. MCMC better?
@@ -134,7 +114,7 @@ ncov_gam_fit_boot <- dic.fit(ncov_inc_dat,dist="G", n.boots=1000,
                              ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
 ```
 
-```{r fit-dic-weibull, results='hide', cache=T}
+```{r fit-dic-weibull, results='hide', cache=T, eval=F}
 set.seed(1)
 
 #fit it...use bootstrap interstions for now. MCMC better?
@@ -145,7 +125,7 @@ ncov_wei_fit_boot <- dic.fit(ncov_inc_dat,dist="W", n.boots=1000,
                              ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
 ```
 
-```{r fit-dic-erlang, results='hide', cache=T}
+```{r fit-dic-erlang, results='hide', cache=T, eval=F}
 set.seed(1)
 
 #fit it...use bootstrap interstions for now. MCMC better?
@@ -329,6 +309,29 @@ Of those `r sum(ncov$SEX=="Female", na.rm=T)` are known to be female (`r (100*su
 The median age is about `r median((ncov$AGEL+ncov$AGER)/2, na.rm=T)` years (IQR: `r quantile((ncov$AGEL+ncov$AGER)/2, probs=.25, na.rm=T)`-`r quantile((ncov$AGEL+ncov$AGER)/2, probs=.75, na.rm=T)`).
 `r nrow(ncov) - nrow(ncov_foreign)` cases are from Mainland China (`r (100*(nrow(ncov) - nrow(ncov_foreign))/nrow(ncov)) %>% round`%), while `r nrow(ncov_foreign)` are from the rest of the world (`r (100*nrow(ncov_foreign)/nrow(ncov)) %>% round()`%).
 `r nrow(ncov_fever)` cases presented with a fever (`r (100*nrow(ncov_fever)/nrow(ncov)) %>% round()`%).
+
+```{r data-summary, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="This figure displays the exposure and symptom onset windows for each case in our dataset, relative to the right-bound of the exposure window (ER). The blue bars indicate the the exposure windows and the red bars indicate the symptom onset windows for each case. Purple areas are where those two bars overlap."}
+dat_sum <- ncov %>%
+    mutate(ELnew = EL-ER,
+           ERnew = ER-ER,
+           SLnew = SL-ER,
+           SRnew = SR-ER,
+           UID=reorder(UID, SR-EL))
+
+ggplot(dat_sum, aes(y=factor(UID))) + 
+    geom_segment(aes(x=ELnew, xend=ERnew, yend=factor(UID)), 
+                 color="blue", size=2, alpha=.25) +
+    geom_segment(aes(x=SLnew, xend=SRnew, yend=factor(UID)), 
+                 size=2, color="red", alpha=.25) +
+    # facet_grid(WUHAN_RESIDENT~., space="free", scales="free") +
+    ggtitle("Exposure and symptom onset windows") +
+    scale_x_continuous("Days since exposure (ER)") +
+    scale_y_discrete("UID") +
+    theme_bw() +
+    theme(axis.text.y = element_blank(),
+          axis.ticks.y= element_blank(),
+          axis.text.x=element_text(color="black"))
+```
 
 ## Exposure and symptom onset windows
 

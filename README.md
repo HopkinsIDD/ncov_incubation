@@ -1,16 +1,7 @@
-<img src="README_files/figure-markdown_strict/data-summary-1.png" alt="This figure displays the exposure and symptom onset windows for each case in our dataset, relative to the right-bound of the exposure window (ER). The blue bars indicate the the exposure windows and the red bars indicate the symptom onset windows for each case. Purple areas are where those two bars overlap."  />
-<p class="caption">
-This figure displays the exposure and symptom onset windows for each
-case in our dataset, relative to the right-bound of the exposure window
-(ER). The blue bars indicate the the exposure windows and the red bars
-indicate the symptom onset windows for each case. Purple areas are where
-those two bars overlap.
-</p>
-
 Real-time estimation of the Wuhan coronavirus incubation time
 =============================================================
 
-Updated: Wed Jan 29 10:31:58 2020
+Updated: Wed Jan 29 12:31:57 2020
 
 Our lab has been collecting data (freely available at
 [`data/nCoV-IDD-traveler-data.csv`](https://github.com/HopkinsIDD/ncov_incubation/blob/master/data/nCoV-IDD-traveler-data.csv))
@@ -39,9 +30,18 @@ Data summary
 
 There are 101 cases that have been double-checked by our team. Of those
 34 are known to be female (34%) and 63 are male (62%). The median age is
-about 51.5 years (IQR: 36.25-57.5). 30 cases are from Mainland China
-(30%), while 71 are from the rest of the world (70%). 61 cases presented
-with a fever (60%).
+about 52 years (IQR: 36.5-59). 29 cases are from Mainland China (29%),
+while 72 are from the rest of the world (71%). 61 cases presented with a
+fever (60%).
+
+<img src="README_files/figure-markdown_strict/data-summary-1.png" alt="This figure displays the exposure and symptom onset windows for each case in our dataset, relative to the right-bound of the exposure window (ER). The blue bars indicate the the exposure windows and the red bars indicate the symptom onset windows for each case. Purple areas are where those two bars overlap."  />
+<p class="caption">
+This figure displays the exposure and symptom onset windows for each
+case in our dataset, relative to the right-bound of the exposure window
+(ER). The blue bars indicate the the exposure windows and the red bars
+indicate the symptom onset windows for each case. Purple areas are where
+those two bars overlap.
+</p>
 
 Exposure and symptom onset windows
 ----------------------------------
@@ -179,9 +179,9 @@ overall results. The confidence intervals are wider here at every
 quantile due to having less data.
 
 Using only cases from outside of Mainland China, the estimates are
--0.091 to 2.461 days longer than the estimates on the full data. There
-is a bit of a gap on the long end of the tail, but the confidence
-intervals overlap for the most part.
+-0.078 to 1.92 days longer than the estimates on the full data. There is
+a bit of a gap on the long end of the tail, but the confidence intervals
+overlap for the most part.
 
 When we set the unknown ELs to 2018 December 1 instead of 2019 December
 1, the estimates are -0.002 to 0.366 days longer than the estimates on
