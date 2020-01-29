@@ -1,6 +1,6 @@
 ---
 title: "The estimation of the Wuhan coronavirus incubation time"
-output: html_document
+output: md_document
 ---
 
 ```{r opts, include=FALSE}
@@ -46,8 +46,6 @@ ncov <- ncov_ELSR %>%
            SL_fever= if_else(is.na(SL_fever) & !is.na(SR_fever), 
                              SL_date,
                              ymd_hms(SL_fever))) %>% 
-    # remove any entries missing EL, ER, SL, or SR
-    filter(!is.na(EL_date), !is.na(ER_date), !is.na(SL_date), !is.na(SR_date)) %>% 
     # calculate days since 1 Dec 2019
     mutate(EL=difftime(EL_date, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
                as.numeric(),
@@ -66,10 +64,13 @@ ncov <- ncov_ELSR %>%
            E_int=ER-EL,
            S_int=SR-SL,
            S_fever_int=SR_fever-SL_fever) %>% 
+    # remove any entries missing EL, ER, SL, or SR
+    filter(!is.na(EL_date), !is.na(ER_date), !is.na(SL_date), !is.na(SR_date)) %>% 
+    filter(!is.na(REVIEWER2)) %>% 
     # remove entries with exposure/onset intervals less than 0
     # remove entries where ER greater than SR or EL greater than SL
     # remove entries that haven't been reviewed by two people
-    filter(E_int > 0, S_int > 0, ER<=SR, SL>=EL, !is.na(REVIEWER2))# %>% 
+    filter(E_int > 0, S_int > 0, ER<=SR, SL>=EL)# %>% 
     # mutate(SL=ifelse(SL==EL, SL+.001, SL),
     #        ER=ifelse(ER==SR, ER-.001, ER))
 
@@ -80,11 +81,11 @@ ncov_fever <- ncov %>%
 
 ## only travel outside of China
 ncov_foreign <- ncov %>% 
-    filter(COUNTRY.DEST != "China")
+    filter(COUNTRY.DEST != "China" | PROVINCE.DEST %in% c("HongKong", "Macau"))
 
 ## only fevers outside of China
-ncov_foreign_fever <- ncov_fever %>% 
-    filter(COUNTRY.DEST != "China")
+ncov_foreign_fever <- ncov_foreign %>% 
+    filter(!is.na(SL_fever) | !is.na(SR_fever))
 ```
 
 ```{r data-summary, echo=FALSE, message=FALSE, warning=FALSE, fig.height=7}
@@ -104,13 +105,16 @@ ggplot(dat_sum, aes(y=factor(UID))) +
     ylab("UID") +
     theme_bw() +
     # coord_cartesian(xlim = c(-40, 50)) +
-    theme(axis.text.y = element_text(size=6)) +
-    annotate("text", x=-35, y="900.1", label="A")
+    theme(axis.text.y = element_text(size=6))
 
 ## number of fevers
 num_fevers <- nrow(ncov_fever)
 ## number of foreign cases
 num_foreign <- nrow(ncov_foreign)
+## number of males females and unknown
+table(ncov$SEX %>% as.factor)
+## age ranges
+quantile((ncov$AGEL+ncov$AGER)/2, probs=c(.25, .5, .75), na.rm=T)
 
 ```
 
@@ -130,16 +134,16 @@ We also run the asymptotic intervals, which run much faster.
 ```{r fit-dic, results='hide', cache=T}
 #make the data to pass in to dic.fit
 ncov_inc_dat <- ncov %>% 
-    select(EL, ER, SL, SR) %>% 
-    mutate(type=0) %>% 
+    mutate(type=as.numeric(S_int==0) + as.numeric(E_int==0)) %>% 
+    select(EL, ER, SL, SR, type) %>% 
     as.data.frame()
 
 #fit it...use bootstrap interstions for now. MCMC better?
 ncov_inc_fit_asym <- dic.fit(ncov_inc_dat,dist="L",
-                             ptiles = c(0.05, 0.25, 0.5, 0.75, 0.95))
+                             ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
 
 ncov_inc_fit_boot <- dic.fit(ncov_inc_dat,dist="L", n.boots=1000,
-                             ptiles = c(0.05, 0.25, 0.5, 0.75, 0.95))
+                             ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
 ```
 
 ```{r dic-plots}
@@ -164,10 +168,10 @@ ncov_fever_dic <- ncov_fever %>%
 
 #fit it...use bootstrap interstions for now. MCMC better?
 ncov_fever_fit_asym <- dic.fit(ncov_fever_dic,dist="L",
-                               ptiles = c(0.05, 0.25, 0.5, 0.75, 0.95))
+                             ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
 
 ncov_fever_fit_boot <- dic.fit(ncov_fever_dic,dist="L", n.boots=1000,
-                             ptiles = c(0.05, 0.25, 0.5, 0.75, 0.95))
+                             ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
 ```
 
 ```{r fever-dic-plots}
@@ -187,10 +191,10 @@ ncov_foreign_dic <- ncov_foreign %>%
     as.data.frame()
 
 ncov_foreign_fit_asym <- dic.fit(ncov_foreign_dic,dist="L",
-                                 ptiles = c(0.05, 0.25, 0.5, 0.75, 0.95))
+                             ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
 
 ncov_foreign_fit_boot <- dic.fit(ncov_foreign_dic,dist="L", n.boots=1000,
-                             ptiles = c(0.05, 0.25, 0.5, 0.75, 0.95))
+                             ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
 
 ```
 
@@ -212,10 +216,10 @@ ncov_foreign_fever_dic <- ncov_foreign_fever %>%
 
 ## foreign fever not working
 ncov_foreign_fever_fit_asym <- dic.fit(ncov_foreign_fever_dic,dist="L",
-                                       ptiles = c(0.05, 0.25, 0.5, 0.75, 0.95))
+                             ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
 ncov_foreign_fever_fit_boot <- dic.fit(ncov_foreign_fever_dic,dist="L",
                                        n.boots=1000,
-                                       ptiles = c(0.05, 0.25, 0.5, 0.75, 0.95))
+                             ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
 
 ```
 
