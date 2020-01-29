@@ -1,7 +1,16 @@
+<img src="README_files/figure-markdown_strict/data-summary-1.png" alt="This figure displays the exposure and symptom onset windows for each case in our dataset, relative to the right-bound of the exposure window (ER). The blue bars indicate the the exposure windows and the red bars indicate the symptom onset windows for each case. Purple areas are where those two bars overlap."  />
+<p class="caption">
+This figure displays the exposure and symptom onset windows for each
+case in our dataset, relative to the right-bound of the exposure window
+(ER). The blue bars indicate the the exposure windows and the red bars
+indicate the symptom onset windows for each case. Purple areas are where
+those two bars overlap.
+</p>
+
 Real-time estimation of the Wuhan coronavirus incubation time
 =============================================================
 
-Updated: Wed Jan 29 10:25:41 2020
+Updated: Wed Jan 29 10:31:58 2020
 
 Our lab has been collecting data (freely available at
 [`data/nCoV-IDD-traveler-data.csv`](https://github.com/HopkinsIDD/ncov_incubation/blob/master/data/nCoV-IDD-traveler-data.csv))
@@ -54,15 +63,6 @@ we make the following assumptions:
 
 Under these assumptions, the median exposure interval was 49 (range:
 1-58.8) and the median symptom onset interval was 1 (range: 0-58.8).
-
-<img src="README_files/figure-markdown_strict/data-summary-1.png" alt="This figure displays the exposure and symptom onset windows for each case in our dataset, relative to the right-bound of the exposure window (ER). The blue bars indicate the the exposure windows and the red bars indicate the symptom onset windows for each case. Purple areas are where those two bars overlap."  />
-<p class="caption">
-This figure displays the exposure and symptom onset windows for each
-case in our dataset, relative to the right-bound of the exposure window
-(ER). The blue bars indicate the the exposure windows and the red bars
-indicate the symptom onset windows for each case. Purple areas are where
-those two bars overlap.
-</p>
 
 Incubation period estimates
 ---------------------------
@@ -199,9 +199,9 @@ incubation windows are shown below:
 
 <img src="README_files/figure-markdown_strict/comparison-1.png" style="display: block; margin: auto;" />
 
-The median estimates from all models lie between 5.1 and 5.765. The
-reduction in confidence interval widths may be due to the difference in
-the number of observations used to estimate each model.
+The median estimates from all models lie between and -. The reduction in
+confidence interval widths may be due to the difference in the number of
+observations used to estimate each model.
 
 *(Qulu Zheng, Hannah Meredith, Kyra Grantz, Qifang Bi, Forrest Jones,
 and Stephen Lauer all contributed to this project)*

@@ -67,13 +67,11 @@ ncov <- ncov_ELSR %>%
            S_fever_int=SR_fever-SL_fever) %>% 
     # remove any entries missing EL, ER, SL, or SR
     filter(!is.na(EL_date), !is.na(ER_date), !is.na(SL_date), !is.na(SR_date)) %>% 
+    # remove entries that haven't been reviewed by two people
     filter(!is.na(REVIEWER2)) %>% 
     # remove entries with exposure/onset intervals less than 0
     # remove entries where ER greater than SR or EL greater than SL
-    # remove entries that haven't been reviewed by two people
-    filter(E_int > 0, S_int > 0, ER<=SR, SL>=EL)# %>% 
-    # mutate(SL=ifelse(SL==EL, SL+.001, SL),
-    #        ER=ifelse(ER==SR, ER-.001, ER))
+    filter(E_int > 0, S_int > 0, ER<=SR, SL>=EL)
 
 ## Now lets divide data sets by observation type
 ## only fevers
@@ -88,44 +86,6 @@ ncov_foreign <- ncov %>%
 ncov_foreign_fever <- ncov_foreign %>% 
     filter(!is.na(SL_fever) | !is.na(SR_fever))
 ```
-
-# Real-time estimation of the Wuhan coronavirus incubation time
-
-Updated: `r date()`
-
-Our lab has been collecting data (freely available at [`data/nCoV-IDD-traveler-data.csv`](https://github.com/HopkinsIDD/ncov_incubation/blob/master/data/nCoV-IDD-traveler-data.csv)) on the exposure and symptom onset for Wuhan novel coronavirus (nCoV-2019) cases that have been confirmed outside of the Hubei province.
-These cases have been confirmed either in other countries or in regions of China with no known local transmission.
-We search for news articles and reports in both English and Chinese and abstract the data necessary to estimate the incubation period of nCoV-2019.
-Two team members independently review the full text of each case report to ensure that data is correctly input.
-Discrepancies are resolved by discussion and consensus.
-
-Quick links:
-
-- [Data summary](#data-summary)
-- [Exposure and symptom onset windows](#exposure-and-symptom-onset-windows)
-- [Incubation period estimates](#incubation-period-estimates)
-- [Alternate estimates and sensitivity analyses](#alternate-estimates-and-sensitivity-analyses)
-- [Comparison to Backer](#comparison-to-backer)
-
-## Data summary
-
-There are `r nrow(ncov)` cases that have been double-checked by our team.
-Of those `r sum(ncov$SEX=="Female", na.rm=T)` are known to be female (`r (100*sum(ncov$SEX=="Female", na.rm=T)/nrow(ncov)) %>% round()`%) and `r sum(ncov$SEX=="Male", na.rm=T)` are male (`r (100*sum(ncov$SEX=="Male", na.rm=T)/nrow(ncov)) %>% round()`%).
-The median age is about `r median((ncov$AGEL+ncov$AGER)/2, na.rm=T)` years (IQR: `r quantile((ncov$AGEL+ncov$AGER)/2, probs=.25, na.rm=T)`-`r quantile((ncov$AGEL+ncov$AGER)/2, probs=.75, na.rm=T)`).
-`r nrow(ncov) - nrow(ncov_foreign)` cases are from Mainland China (`r (100*(nrow(ncov) - nrow(ncov_foreign))/nrow(ncov)) %>% round`%), while `r nrow(ncov_foreign)` are from the rest of the world (`r (100*nrow(ncov_foreign)/nrow(ncov)) %>% round()`%).
-`r nrow(ncov_fever)` cases presented with a fever (`r (100*nrow(ncov_fever)/nrow(ncov)) %>% round()`%).
-
-## Exposure and symptom onset windows
-
-The necessary components for estimating the incubation period are left and right bounds for the exposure (EL and ER) and symptom onset times (SE and SR) for each case.
-We use explicit dates and times when they are reported in the source documents, however when they are not available, we make the following assumptions:
-
-- For cases without a reported right-bound on symptom onset time (SR), we use the time that the case is first presented to a hospital or, lacking that, the time that the source document was published
-- For cases without an EL, we use 2019 December 1, which was the onset date for the first reported nCoV-2019 case; though we will test this assumption later
-- For cases without an ER, we use the SR
-- For cases without an SL, we use the EL
-
-Under these assumptions, the median exposure interval was `r round(median(ncov$E_int),1)` (range: `r round(min(ncov$E_int),1)`-`r round(max(ncov$E_int),1)`) and the median symptom onset interval was `r round(median(ncov$S_int),1)` (range: `r round(min(ncov$S_int),1)`-`r round(max(ncov$S_int),1)`).
 
 ```{r data-summary, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="This figure displays the exposure and symptom onset windows for each case in our dataset, relative to the right-bound of the exposure window (ER). The blue bars indicate the the exposure windows and the red bars indicate the symptom onset windows for each case. Purple areas are where those two bars overlap."}
 dat_sum <- ncov %>%
@@ -147,14 +107,8 @@ ggplot(dat_sum, aes(y=factor(UID))) +
           axis.ticks.y= element_blank())
 ```
 
-## Incubation period estimates
-
-We estimate the incubation period using the coarseDataTools package based on the paper by [Reich *et al*, 2009](https://onlinelibrary.wiley.com/doi/pdf/10.1002/sim.3659).
-We assume a log-normal incubation period and using a bootstrap method for calculating confidence intervals.
-
-The first model we fit is to all of the data and output the median, 2.5th, and 97.5th quantiles (and their confidence intervals):
-
 ```{r fit-dic, results='hide', cache=T}
+set.seed(1)
 #make the data to pass in to dic.fit
 ncov_inc_dat <- ncov %>% 
     mutate(type=as.numeric(S_int==0) + as.numeric(E_int==0)) %>% 
@@ -169,30 +123,38 @@ ncov_inc_fit_boot <- dic.fit(ncov_inc_dat,dist="L", n.boots=1000,
                              ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
 ```
 
-```{r dic-plots}
-## plot the boot fit and table of intervals
-plot(ncov_inc_fit_boot, main="CDF of incubation times",
-     xlab="Incubation time, in days", ylab="", xlim=c(0,20))
+```{r fit-dic-gamma, results='hide', cache=T}
+set.seed(1)
 
-knitr::kable(ncov_inc_fit_boot@ests[,-4])
+#fit it...use bootstrap interstions for now. MCMC better?
+ncov_gam_fit_asym <- dic.fit(ncov_inc_dat,dist="G",
+                             ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
 
-## plot the asymptotic fit and table of intervals
-# plot(ncov_inc_fit_asym, main="asymptotic results")
-# ncov_inc_fit_asym
+ncov_gam_fit_boot <- dic.fit(ncov_inc_dat,dist="G", n.boots=1000,
+                             ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
 ```
 
-The median incubation period lasts `r ncov_inc_fit_boot@ests["p50", "est"]` days (CI: `r ncov_inc_fit_boot@ests["p50", "CIlow"]`-`r ncov_inc_fit_boot@ests["p50", "CIhigh"]`).
-The 2.5% of incubation periods pass in less than `r ncov_inc_fit_boot@ests["p2.5", "est"]` days (CI: `r ncov_inc_fit_boot@ests["p2.5", "CIlow"]`-`r ncov_inc_fit_boot@ests["p2.5", "CIhigh"]`), while 97.5% of the population would experience symptoms by `r ncov_inc_fit_boot@ests["p97.5", "est"]` days (CI: `r ncov_inc_fit_boot@ests["p97.5", "CIlow"]`-`r ncov_inc_fit_boot@ests["p97.5", "CIhigh"]`) since their exposure.
-The 'meanlog' and 'sdlog' estimates are the median and dispersion parameters for a LogNormal distribution; i.e. we recommend using a LogNormal(`r ncov_inc_fit_boot@ests["meanlog", "est"]`, `r ncov_inc_fit_boot@ests["sdlog", "est"]`) distribution to appropriately represent the incubation time distribution.
+```{r fit-dic-weibull, results='hide', cache=T}
+set.seed(1)
 
-## Alternate estimates and sensitivity analyses
+#fit it...use bootstrap interstions for now. MCMC better?
+ncov_wei_fit_asym <- dic.fit(ncov_inc_dat,dist="W",
+                             ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
 
-To make sure that our overall incubation estimates are sound, we ran a few analyses on subsets to see if the results held up.
-Since the winter often brings cold air and other pathogens that can cause sore throats and coughs, we ran an analysis using only cases that reported a fever.
-Since a plurality of our cases came from Mainland China, where assumptions about local transmission may be less firm, we ran an analysis without those cases.
-Finally, we challenge our assumption that unknown ELs can be assumed to be 2019 December 1 ([Nextstrain estimates that it could have happened as early as September](https://nextstrain.org/ncov?dmax=2019-12-04&m=num_date)), by setting unknown ELs to 2018 December 1.
+ncov_wei_fit_boot <- dic.fit(ncov_inc_dat,dist="W", n.boots=1000,
+                             ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
+```
+
+```{r fit-dic-erlang, results='hide', cache=T}
+set.seed(1)
+
+#fit it...use bootstrap interstions for now. MCMC better?
+ncov_erl_fit <- dic.fit.mcmc(ncov_inc_dat,dist="E",
+                             ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
+```
 
 ```{r fit-fever-dics, results='hide', cache=T}
+set.seed(1)
 #make the data to pass in to dic.fit
 ncov_fever_dic <- ncov_fever %>% 
     select(EL, ER, SL=SL_fever, SR=SR_fever) %>% 
@@ -223,6 +185,7 @@ knitr::kable(fever_tbl)
 ```
 
 ```{r fit-foreign-dics, results='hide', cache=T}
+set.seed(1)
 ncov_foreign_dic <- ncov_foreign %>% 
     select(EL, ER, SL, SR) %>% 
     mutate(type=0) %>% 
@@ -251,6 +214,7 @@ knitr::kable(foreign_tbl)
 ```
 
 ```{r fit-foreign-fever-dics, results='hide', cache=T, eval=F}
+set.seed(1)
 ncov_foreign_fever_dic <- ncov_foreign_fever %>% 
     select(EL, ER, SL, SR) %>% 
     mutate(type=0) %>% 
@@ -272,6 +236,7 @@ ncov_foreign_fever_fit_asym
 ```
 
 ```{r fit-year-dics, results='hide', cache=T}
+set.seed(1)
 ## change dates to restrict exposure to after December 1
 ## add times where missing
 ncov_year_dic <- ncov_raw %>% 
@@ -339,6 +304,74 @@ year_tbl$diff <- ncov_year_fit_boot@ests[-c(1:2), "est"] - ncov_inc_fit_boot@est
 knitr::kable(year_tbl)
 ```
 
+# Real-time estimation of the Wuhan coronavirus incubation time
+
+Updated: `r date()`
+
+Our lab has been collecting data (freely available at [`data/nCoV-IDD-traveler-data.csv`](https://github.com/HopkinsIDD/ncov_incubation/blob/master/data/nCoV-IDD-traveler-data.csv)) on the exposure and symptom onset for Wuhan novel coronavirus (nCoV-2019) cases that have been confirmed outside of the Hubei province.
+These cases have been confirmed either in other countries or in regions of China with no known local transmission.
+We search for news articles and reports in both English and Chinese and abstract the data necessary to estimate the incubation period of nCoV-2019.
+Two team members independently review the full text of each case report to ensure that data is correctly input.
+Discrepancies are resolved by discussion and consensus.
+
+Quick links:
+
+- [Data summary](#data-summary)
+- [Exposure and symptom onset windows](#exposure-and-symptom-onset-windows)
+- [Incubation period estimates](#incubation-period-estimates)
+- [Alternate estimates and sensitivity analyses](#alternate-estimates-and-sensitivity-analyses)
+- [Comparison to Backer](#comparison-to-backer)
+
+## Data summary
+
+There are `r nrow(ncov)` cases that have been double-checked by our team.
+Of those `r sum(ncov$SEX=="Female", na.rm=T)` are known to be female (`r (100*sum(ncov$SEX=="Female", na.rm=T)/nrow(ncov)) %>% round()`%) and `r sum(ncov$SEX=="Male", na.rm=T)` are male (`r (100*sum(ncov$SEX=="Male", na.rm=T)/nrow(ncov)) %>% round()`%).
+The median age is about `r median((ncov$AGEL+ncov$AGER)/2, na.rm=T)` years (IQR: `r quantile((ncov$AGEL+ncov$AGER)/2, probs=.25, na.rm=T)`-`r quantile((ncov$AGEL+ncov$AGER)/2, probs=.75, na.rm=T)`).
+`r nrow(ncov) - nrow(ncov_foreign)` cases are from Mainland China (`r (100*(nrow(ncov) - nrow(ncov_foreign))/nrow(ncov)) %>% round`%), while `r nrow(ncov_foreign)` are from the rest of the world (`r (100*nrow(ncov_foreign)/nrow(ncov)) %>% round()`%).
+`r nrow(ncov_fever)` cases presented with a fever (`r (100*nrow(ncov_fever)/nrow(ncov)) %>% round()`%).
+
+## Exposure and symptom onset windows
+
+The necessary components for estimating the incubation period are left and right bounds for the exposure (EL and ER) and symptom onset times (SE and SR) for each case.
+We use explicit dates and times when they are reported in the source documents, however when they are not available, we make the following assumptions:
+
+- For cases without a reported right-bound on symptom onset time (SR), we use the time that the case is first presented to a hospital or, lacking that, the time that the source document was published
+- For cases without an EL, we use 2019 December 1, which was the onset date for the first reported nCoV-2019 case; though we will test this assumption later
+- For cases without an ER, we use the SR
+- For cases without an SL, we use the EL
+
+Under these assumptions, the median exposure interval was `r round(median(ncov$E_int),1)` (range: `r round(min(ncov$E_int),1)`-`r round(max(ncov$E_int),1)`) and the median symptom onset interval was `r round(median(ncov$S_int),1)` (range: `r round(min(ncov$S_int),1)`-`r round(max(ncov$S_int),1)`).
+
+## Incubation period estimates
+
+We estimate the incubation period using the coarseDataTools package based on the paper by [Reich *et al*, 2009](https://onlinelibrary.wiley.com/doi/pdf/10.1002/sim.3659).
+We assume a log-normal incubation period and using a bootstrap method for calculating confidence intervals.
+
+The first model we fit is to all of the data and output the median, 2.5th, and 97.5th quantiles (and their confidence intervals):
+
+```{r dic-plots}
+## plot the boot fit and table of intervals
+plot(ncov_inc_fit_boot, main="CDF of incubation times",
+     xlab="Incubation time, in days", ylab="", xlim=c(0,20))
+
+knitr::kable(ncov_inc_fit_boot@ests[,-4])
+
+## plot the asymptotic fit and table of intervals
+# plot(ncov_inc_fit_asym, main="asymptotic results")
+# ncov_inc_fit_asym
+```
+
+The median incubation period lasts `r ncov_inc_fit_boot@ests["p50", "est"]` days (CI: `r ncov_inc_fit_boot@ests["p50", "CIlow"]`-`r ncov_inc_fit_boot@ests["p50", "CIhigh"]`).
+The 2.5% of incubation periods pass in less than `r ncov_inc_fit_boot@ests["p2.5", "est"]` days (CI: `r ncov_inc_fit_boot@ests["p2.5", "CIlow"]`-`r ncov_inc_fit_boot@ests["p2.5", "CIhigh"]`), while 97.5% of the population would experience symptoms by `r ncov_inc_fit_boot@ests["p97.5", "est"]` days (CI: `r ncov_inc_fit_boot@ests["p97.5", "CIlow"]`-`r ncov_inc_fit_boot@ests["p97.5", "CIhigh"]`) since their exposure.
+The 'meanlog' and 'sdlog' estimates are the median and dispersion parameters for a LogNormal distribution; i.e. we recommend using a LogNormal(`r ncov_inc_fit_boot@ests["meanlog", "est"]`, `r ncov_inc_fit_boot@ests["sdlog", "est"]`) distribution to appropriately represent the incubation time distribution.
+
+## Alternate estimates and sensitivity analyses
+
+To make sure that our overall incubation estimates are sound, we ran a few analyses on subsets to see if the results held up.
+Since the winter often brings cold air and other pathogens that can cause sore throats and coughs, we ran an analysis using only cases that reported a fever.
+Since a plurality of our cases came from Mainland China, where assumptions about local transmission may be less firm, we ran an analysis without those cases.
+Finally, we challenge our assumption that unknown ELs can be assumed to be 2019 December 1 ([Nextstrain estimates that it could have happened as early as September](https://nextstrain.org/ncov?dmax=2019-12-04&m=num_date)), by setting unknown ELs to 2018 December 1.
+
 ```{r all-est-plot, warning=F, message=F}
 all_est_plot <- ncov_inc_fit_asym@ests[-2, -4] %>% 
     as.data.frame() %>% 
@@ -402,7 +435,7 @@ A comparison of our incubation windows are shown below:
 
 ```{r comparison}
 other_studies <- read_csv("data/other-studies.csv")
-all_est_plot <- ncov_inc_fit_asym@ests[-2, -4] %>% 
+backer_comp <- ncov_inc_fit_asym@ests[-2, -4] %>% 
     as.data.frame() %>% 
     mutate(qtile=c("mean", 2.5, 5, 25, 50, 75, 95, 97.5),
            type="all") %>% 
@@ -434,7 +467,7 @@ all_est_plot <- ncov_inc_fit_asym@ests[-2, -4] %>%
     select(-CIhigh, -CIlow) %>% 
     spread(qtile, est, sep="_")
 
-ggplot(data=all_est_plot,
+ggplot(data=backer_comp,
        aes(y=qtile_50, ymin=qtile_2.5, ymax=qtile_97.5, x=paste(study, type),
            color=study)) +
     geom_errorbar(width=0.2, position=position_dodge(0.9)) +
