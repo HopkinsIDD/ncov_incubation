@@ -166,7 +166,7 @@ ncov_inc_fit_boot <- dic.fit(ncov_inc_dat,dist="L", n.boots=1000,
 plot(ncov_inc_fit_boot, main="CDF of incubation times",
      xlab="Incubation time, in days", ylab="", xlim=c(0,20))
 
-knitr::kable(ncov_inc_fit_boot@ests[-c(1:2),-4])
+knitr::kable(ncov_inc_fit_boot@ests[,-4])
 
 ## plot the asymptotic fit and table of intervals
 # plot(ncov_inc_fit_asym, main="asymptotic results")
@@ -174,7 +174,8 @@ knitr::kable(ncov_inc_fit_boot@ests[-c(1:2),-4])
 ```
 
 The median incubation period lasts `r ncov_inc_fit_boot@ests["p50", "est"]` days (CI: `r ncov_inc_fit_boot@ests["p50", "CIlow"]`-`r ncov_inc_fit_boot@ests["p50", "CIhigh"]`).
-The fastest incubation periods pass in `r ncov_inc_fit_boot@ests["p2.5", "est"]` days (CI: `r ncov_inc_fit_boot@ests["p2.5", "CIlow"]`-`r ncov_inc_fit_boot@ests["p2.5", "CIhigh"]`), while the longest ones take `r ncov_inc_fit_boot@ests["p97.5", "est"]` days (CI: `r ncov_inc_fit_boot@ests["p97.5", "CIlow"]`-`r ncov_inc_fit_boot@ests["p97.5", "CIhigh"]`).
+The 2.5% of incubation periods pass in less than `r ncov_inc_fit_boot@ests["p2.5", "est"]` days (CI: `r ncov_inc_fit_boot@ests["p2.5", "CIlow"]`-`r ncov_inc_fit_boot@ests["p2.5", "CIhigh"]`), while 97.5% of the population would experience symptoms by `r ncov_inc_fit_boot@ests["p97.5", "est"]` days (CI: `r ncov_inc_fit_boot@ests["p97.5", "CIlow"]`-`r ncov_inc_fit_boot@ests["p97.5", "CIhigh"]`) since their exposure.
+The 'meanlog' and 'sdlog' estimates are the median and dispersion parameters for a LogNormal distribution; i.e. we recommend using a LogNormal(`r ncov_inc_fit_boot@ests["meanlog", "est"]`, `r ncov_inc_fit_boot@ests["sdlog", "est"]`) distribution to appropriately represent the incubation time distribution.
 
 ## Alternate estimates and sensitivity analyses
 

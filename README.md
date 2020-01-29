@@ -1,7 +1,7 @@
 Real-time estimation of the Wuhan coronavirus incubation time
 =============================================================
 
-Updated: Wed Jan 29 00:42:01 2020
+Updated: Wed Jan 29 10:18:30 2020
 
 Our lab has been collecting data (freely available at
 [`data/nCoV-IDD-traveler-data.csv`](https://github.com/HopkinsIDD/ncov_incubation/blob/master/data/nCoV-IDD-traveler-data.csv))
@@ -79,6 +79,18 @@ The first model we fit is to all of the data and output the median,
 </thead>
 <tbody>
 <tr class="odd">
+<td>meanlog</td>
+<td style="text-align: right;">1.644</td>
+<td style="text-align: right;">1.495</td>
+<td style="text-align: right;">1.798</td>
+</tr>
+<tr class="even">
+<td>sdlog</td>
+<td style="text-align: right;">0.363</td>
+<td style="text-align: right;">0.201</td>
+<td style="text-align: right;">0.521</td>
+</tr>
+<tr class="odd">
 <td>p2.5</td>
 <td style="text-align: right;">2.542</td>
 <td style="text-align: right;">1.829</td>
@@ -123,9 +135,14 @@ The first model we fit is to all of the data and output the median,
 </tbody>
 </table>
 
-The median incubation period lasts 5.174 days (CI: 4.46-6.037). The
-fastest incubation periods pass in 2.542 days (CI: 1.829-3.564), while
-the longest ones take 10.531 days (CI: 7.381-15.051).
+The median incubation period lasts 5.174 days (CI: 4.46-6.037). The 2.5%
+of incubation periods pass in less than 2.542 days (CI: 1.829-3.564),
+while 97.5% of the population would experience symptoms by 10.531 days
+(CI: 7.381-15.051) since their exposure. The ‘meanlog’ and ‘sdlog’
+estimates are the median and dispersion parameters for a LogNormal
+distribution; i.e. we recommend using a LogNormal(1.644, 0.363)
+distribution to appropriately represent the incubation time
+distribution.
 
 Alternate estimates and sensitivity analyses
 --------------------------------------------
