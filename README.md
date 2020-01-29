@@ -1,7 +1,7 @@
 Real-time estimation of the Wuhan coronavirus incubation time
 =============================================================
 
-Updated: Wed Jan 29 10:18:30 2020
+Updated: Wed Jan 29 10:25:41 2020
 
 Our lab has been collecting data (freely available at
 [`data/nCoV-IDD-traveler-data.csv`](https://github.com/HopkinsIDD/ncov_incubation/blob/master/data/nCoV-IDD-traveler-data.csv))
@@ -14,6 +14,16 @@ necessary to estimate the incubation period of nCoV-2019. Two team
 members independently review the full text of each case report to ensure
 that data is correctly input. Discrepancies are resolved by discussion
 and consensus.
+
+Quick links:
+
+-   [Data summary](#data-summary)
+-   [Exposure and symptom onset
+    windows](#exposure-and-symptom-onset-windows)
+-   [Incubation period estimates](#incubation-period-estimates)
+-   [Alternate estimates and sensitivity
+    analyses](#alternate-estimates-and-sensitivity-analyses)
+-   [Comparison to Backer](#comparison-to-backer)
 
 Data summary
 ------------
@@ -29,7 +39,7 @@ Exposure and symptom onset windows
 
 The necessary components for estimating the incubation period are left
 and right bounds for the exposure (EL and ER) and symptom onset times
-(SL and SR) for each case. We use explicit dates and times when they are
+(SE and SR) for each case. We use explicit dates and times when they are
 reported in the source documents, however when they are not available,
 we make the following assumptions:
 

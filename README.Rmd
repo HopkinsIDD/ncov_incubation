@@ -99,6 +99,14 @@ We search for news articles and reports in both English and Chinese and abstract
 Two team members independently review the full text of each case report to ensure that data is correctly input.
 Discrepancies are resolved by discussion and consensus.
 
+Quick links:
+
+- [Data summary](#data-summary)
+- [Exposure and symptom onset windows](#exposure-and-symptom-onset-windows)
+- [Incubation period estimates](#incubation-period-estimates)
+- [Alternate estimates and sensitivity analyses](#alternate-estimates-and-sensitivity-analyses)
+- [Comparison to Backer](#comparison-to-backer)
+
 ## Data summary
 
 There are `r nrow(ncov)` cases that have been double-checked by our team.
