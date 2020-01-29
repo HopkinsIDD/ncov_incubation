@@ -1,16 +1,16 @@
 Real-time estimation of the Wuhan coronavirus incubation time
 =============================================================
 
-Updated: Tue Jan 28 20:05:35 2020
+Updated: Tue Jan 28 20:12:39 2020
 
-The our lab has been collecting data on the exposure and symptom onset
-for Wuhan novel coronavirus (nCoV-2019) cases that have been confirmed
+Our lab has been collecting data on the exposure and symptom onset for
+Wuhan novel coronavirus (nCoV-2019) cases that have been confirmed
 outside of the Hubei province. These cases have been confirmed either in
 other countries or in regions of China with no known local transmission.
 We search for news articles and reports in both English and Chinese and
 abstract the data necessary to estimate the incubation period of
-nCoV-2019. Two authors independently review the full text of each case
-report to ensure that data is correctly input. Discrepancies are
+nCoV-2019. Two team members independently review the full text of each
+case report to ensure that data is correctly input. Discrepancies are
 resolved by discussion and consensus.
 
 Data summary
@@ -56,10 +56,10 @@ Incubation period estimates
 ---------------------------
 
 We estimate the incubation period using the package based on the paper
-by Reich *et al*, 2009, using code originally written for determining
-the incubation period of Zika virus (Lessler *et al*, 2016). Basic
-incubation period analysis assuming a log-normal incubation period and
-using a bootstrap method for calculating confidence intervals.
+by Reich *et al*, 2009, adapting code originally written for determining
+the incubation period of Zika virus (Lessler *et al*, 2016). We assume a
+log-normal incubation period and using a bootstrap method for
+calculating confidence intervals.
 
 The first model we fit is to all of the data and output the median,
 2.5th, and 97.5th quantiles (and their confidence intervals):
