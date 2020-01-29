@@ -29,7 +29,7 @@ Exposure and symptom onset windows
 
 The necessary components for estimating the incubation period are left
 and right bounds for the exposure (EL and ER) and symptom onset times
-(SE and SR) for each case. We use explicit dates and times when they are
+(SL and SR) for each case. We use explicit dates and times when they are
 reported in the source documents, however when they are not available,
 we make the following assumptions:
 
