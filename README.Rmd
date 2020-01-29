@@ -418,7 +418,7 @@ all_est_plot <- ncov_inc_fit_asym@ests[-2, -4] %>%
     mutate(est=ifelse(qtile=="mean", exp(est), est),
            CIlow=ifelse(qtile=="mean", exp(CIlow), CIlow),
            CIhigh=ifelse(qtile=="mean", exp(CIhigh), CIhigh),
-           study="ours",
+           study="JHU-IDD",
            virus="nCoV") %>% 
     bind_rows(other_studies) %>% 
     filter(qtile %in% c(2.5, 50, 97.5)) %>% 
