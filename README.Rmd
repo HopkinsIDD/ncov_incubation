@@ -326,7 +326,7 @@ ncov_year_fit_boot <- dic.fit(ncov_year_dic,dist="L", n.boots=1000,
 
 ```{r year-dic-plots}
 ## plot the boot fit and table of intervals
-plot(ncov_year_fit_boot, main="non-Mainland results")
+plot(ncov_year_fit_boot, main="EL-2018 results")
 
 year_tbl <- ncov_year_fit_boot@ests[-c(1:2),-4] %>% 
     as.data.frame()

@@ -1,7 +1,7 @@
 Real-time estimation of the Wuhan coronavirus incubation time
 =============================================================
 
-Updated: Tue Jan 28 20:12:39 2020
+Updated: Tue Jan 28 20:18:30 2020
 
 Our lab has been collecting data on the exposure and symptom onset for
 Wuhan novel coronavirus (nCoV-2019) cases that have been confirmed
