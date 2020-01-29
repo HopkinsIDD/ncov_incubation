@@ -1,0 +1,529 @@
+---
+title: "Estimating incubation period of novel coronavirus 2019 in Wuhan, China"
+output: md_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r opts, include=FALSE}
+knitr::opts_knit$set(root.dir = here::here())
+knitr::opts_chunk$set(echo=F, message=F, warning=F, eval=T,
+                      fig.align='center',fig.pos='ht')
+```
+
+Data freely available at [`data/nCoV-IDD-traveler-data.csv`](https://github.com/HopkinsIDD/ncov_incubation/blob/master/data/nCoV-IDD-traveler-data.csv)) 
+
+```{r load, include=FALSE}
+library(tidyverse)
+library(lubridate)
+library(coarseDataTools)
+library(gridExtra)
+library(rstan)
+cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+set.seed(1)
+
+## read in coronavirus data
+ncov_raw <- read_csv("data/nCoV-IDD-traveler-data.csv") %>% 
+    rename(EL_date=EL, ER_date=ER, SL_date=SL, SR_date=SR)
+
+## change dates to restrict exposure to after December 1
+## add times where missing
+ncov_ELSR <- ncov_raw %>% 
+    # if EL is missing or before 1 Dec 2019, use 1 Dec 2019
+    mutate(EL_date=ifelse(is.na(EL_date),"2019-12-01 00:00:00", EL_date) %>% 
+               ymd_hms() %>% 
+               if_else(. < ymd_hms("2019-12-01 00:00:00"),
+                       ymd_hms("2019-12-01 00:00:00"), .),
+           # if SR is missing, use PR
+           SR_date=ifelse(ymd_hms(SR_date) %>% is.na,
+                          PR, SR_date) %>% 
+               ymd_hms(),
+           # SR_fever is only for cases with confirmed fever dates
+           SR_fever=ymd_hms(SR_fever))
+
+ncov <- ncov_ELSR %>% 
+    # if ER is missing, use SR; if SL is missing, use EL
+    mutate(ER_date=if_else(is.na(ER_date), SR_date, ymd_hms(ER_date)),
+           SL_date=if_else(is.na(SL_date), EL_date, ymd_hms(SL_date)),
+           SL_fever= if_else(is.na(SL_fever) & !is.na(SR_fever), 
+                             SL_date,
+                             ymd_hms(SL_fever))) %>% 
+    # calculate days since 1 Dec 2019
+    mutate(EL=difftime(EL_date, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+               as.numeric(),
+           ER=difftime(ER_date, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+               as.numeric(),
+           SL=difftime(SL_date, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+               as.numeric(),
+           SR=difftime(SR_date, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+               as.numeric(),
+           SL_fever=difftime(SL_fever,
+                             ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+               as.numeric(),
+           SR_fever=difftime(SR_fever,
+                             ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+               as.numeric(),
+           PL=difftime(PL, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+               as.numeric(),
+           PR=difftime(PR, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+               as.numeric(),
+           E_int=ER-EL,
+           S_int=SR-SL,
+           S_fever_int=SR_fever-SL_fever) %>% 
+    # remove any entries missing EL, ER, SL, or SR
+    filter(!is.na(EL_date), !is.na(ER_date), !is.na(SL_date), !is.na(SR_date)) %>% 
+    # remove entries that haven't been reviewed by two people
+    filter(!is.na(REVIEWER2)) %>% 
+    # remove entries with exposure/onset intervals less than 0
+    # remove entries where ER greater than SR or EL greater than SL
+    filter(E_int > 0, S_int > 0, ER<=SR, SL>=EL)
+
+## Now lets divide data sets by observation type
+## only fevers
+ncov_fever <- ncov %>% 
+    filter(!is.na(SL_fever) | !is.na(SR_fever))
+
+## only travel outside of China
+ncov_foreign <- ncov %>% 
+    filter(COUNTRY.DEST != "China" | PROVINCE.DEST %in% c("HongKong", "Macau"))
+
+## only fevers outside of China
+ncov_foreign_fever <- ncov_foreign %>% 
+    filter(!is.na(SL_fever) | !is.na(SR_fever))
+```
+
+## Data summary
+
+The necessary components for estimating the incubation period are left and right bounds for the exposure (EL and ER) and symptom onset times (SE and SR) for each case.
+We use explicit dates and times when they are reported in the source documents, however when they are not available, we make the following assumptions:
+
+- For cases without a reported right-bound on symptom onset time (SR), we use the time that the case is first presented to a hospital or, lacking that, the time that the source document was published
+- For cases without an EL, we use 2019 December 1, which was the onset date for the first reported nCoV-2019 case; though we will test this assumption later
+- For cases without an ER, we use the SR
+- For cases without an SL, we use the EL
+
+```{r data-summary, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="This figure displays the exposure and symptom onset windows for each case in our dataset, relative to the right-bound of the exposure window (ER). The blue bars indicate the the exposure windows and the red bars indicate the symptom onset windows for each case. Purple areas are where those two bars overlap."}
+dat_sum <- ncov %>%
+    mutate(ELnew = EL-ER,
+           ERnew = ER-ER,
+           SLnew = SL-ER,
+           SRnew = SR-ER,
+           UID=reorder(UID, SR-EL))
+
+ggplot(dat_sum, aes(y=factor(UID))) + 
+    geom_segment(aes(x=ELnew, xend=ERnew, yend=factor(UID)), 
+                 color="blue", size=2, alpha=.25) +
+    geom_segment(aes(x=SLnew, xend=SRnew, yend=factor(UID)), 
+                 size=2, color="red", alpha=.25) +
+    # facet_grid(WUHAN_RESIDENT~., space="free", scales="free") +
+    ggtitle("Exposure and symptom onset windows") +
+    scale_x_continuous("Days since exposure (ER)") +
+    scale_y_discrete("UID") +
+    theme_bw() +
+    theme(axis.text.y = element_blank(),
+          axis.ticks.y= element_blank(),
+          axis.text.x=element_text(color="black"))
+```
+
+```{r fill-in-values}
+## number of regions
+num_reg <- ((ncov$COUNTRY.DEST[ncov$COUNTRY.DEST!="China"]) %>%
+                unique() %>% length()) +
+    ((ncov$PROVINCE.DEST[ncov$COUNTRY.DEST=="China"]) %>% unique() %>% length())
+```
+
+
+## Incubation period estimates
+
+We estimate the incubation period using the coarseDataTools package based on the paper by [Reich *et al*, 2009](https://onlinelibrary.wiley.com/doi/pdf/10.1002/sim.3659).
+We assume a log-normal incubation period and using a bootstrap method for calculating confidence intervals.
+
+The first model we fit is to all of the data and output the median, 2.5th, and 97.5th quantiles (and their confidence intervals):
+
+
+```{r fit-dic, results='hide', cache=T}
+set.seed(1)
+#make the data to pass in to dic.fit
+ncov_inc_dat <- ncov %>% 
+    mutate(type=as.numeric(S_int==0) + as.numeric(E_int==0)) %>% 
+    select(EL, ER, SL, SR, type) %>% 
+    as.data.frame()
+
+#fit it...use bootstrap interstions for now. MCMC better?
+ncov_inc_fit_asym <- dic.fit(ncov_inc_dat,dist="L",
+                             ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
+
+ncov_inc_fit_boot <- dic.fit(ncov_inc_dat,dist="L", n.boots=1000,
+                             ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
+```
+
+```{r fit-dic-gamma, results='hide', cache=T}
+set.seed(1)
+
+#fit it...use bootstrap interstions for now. MCMC better?
+ncov_gam_fit_boot <- dic.fit(ncov_inc_dat,dist="G", n.boots=1000,
+                             ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
+```
+
+```{r fit-dic-weibull, results='hide', cache=T}
+set.seed(1)
+
+#fit it...use bootstrap interstions for now. MCMC better?
+ncov_wei_fit_asym <- dic.fit(ncov_inc_dat,dist="W",
+                             ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
+
+ncov_wei_fit_boot <- dic.fit(ncov_inc_dat,dist="W", n.boots=1000,
+                             ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
+```
+
+```{r fit-dic-erlang, results='hide', cache=T}
+set.seed(1)
+
+#fit it...use bootstrap interstions for now. MCMC better?
+ncov_erl_fit <- dic.fit.mcmc(ncov_inc_dat,dist="E",
+                             ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
+```
+
+```{r fit-fever-dics, results='hide', cache=T}
+set.seed(1)
+#make the data to pass in to dic.fit
+ncov_fever_dic <- ncov_fever %>% 
+    select(EL, ER, SL=SL_fever, SR=SR_fever) %>% 
+    mutate(type=0) %>% 
+    as.data.frame()
+
+#fit it...use bootstrap interstions for now. MCMC better?
+ncov_fever_fit_asym <- dic.fit(ncov_fever_dic,dist="L",
+                             ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
+
+ncov_fever_fit_boot <- dic.fit(ncov_fever_dic,dist="L", n.boots=1000,
+                             ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
+```
+
+```{r fever-dic-plots, eval=F}
+## plot the boot fit and table of intervals
+plot(ncov_fever_fit_boot, main="fever-only results")
+
+fever_tbl <- ncov_fever_fit_boot@ests[-c(1:2),-4] %>% 
+    as.data.frame()
+fever_tbl$diff <- ncov_fever_fit_boot@ests[-c(1:2), "est"] - ncov_inc_fit_boot@ests[-c(1:2), "est"]
+knitr::kable(fever_tbl)
+
+
+## plot the asymptotic fit and table of intervals
+# plot(ncov_fever_fit_asym, main="asymptotic results (fever only)")
+# ncov_fever_fit_asym
+```
+
+```{r fit-foreign-dics, results='hide', cache=T}
+set.seed(1)
+ncov_foreign_dic <- ncov_foreign %>% 
+    select(EL, ER, SL, SR) %>% 
+    mutate(type=0) %>% 
+    as.data.frame()
+
+ncov_foreign_fit_asym <- dic.fit(ncov_foreign_dic,dist="L",
+                             ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
+
+ncov_foreign_fit_boot <- dic.fit(ncov_foreign_dic,dist="L", n.boots=1000,
+                             ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
+
+```
+
+```{r foreign-dic-plots, eval=F}
+## plot the boot fit and table of intervals
+plot(ncov_foreign_fit_boot, main="non-Mainland results")
+
+foreign_tbl <- ncov_foreign_fit_boot@ests[-c(1:2),-4] %>% 
+    as.data.frame()
+foreign_tbl$diff <- ncov_foreign_fit_boot@ests[-c(1:2), "est"] - ncov_inc_fit_boot@ests[-c(1:2), "est"]
+knitr::kable(foreign_tbl)
+
+## plot the asymptotic fit and table of intervals
+# plot(ncov_foreign_fit_asym, main="asymptotic results (foreign only)")
+# ncov_foreign_fit_asym
+```
+
+```{r fit-foreign-fever-dics, results='hide', cache=T, eval=F}
+set.seed(1)
+ncov_foreign_fever_dic <- ncov_foreign_fever %>% 
+    select(EL, ER, SL, SR) %>% 
+    mutate(type=0) %>% 
+    as.data.frame()
+
+## foreign fever not working
+ncov_foreign_fever_fit_asym <- dic.fit(ncov_foreign_fever_dic,dist="L",
+                             ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
+ncov_foreign_fever_fit_boot <- dic.fit(ncov_foreign_fever_dic,dist="L",
+                                       n.boots=1000,
+                             ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
+
+```
+
+```{foreign-fever-dics, eval=F}
+## plot the asymptotic fit and table of intervals
+plot(ncov_foreign_fever_fit_asym, main="asymptotic results (foreign only)")
+ncov_foreign_fever_fit_asym
+```
+
+```{r fit-year-dics, results='hide', cache=T}
+set.seed(1)
+## change dates to restrict exposure to after December 1
+## add times where missing
+ncov_year_dic <- ncov_raw %>% 
+    # if EL is missing or before 1 Dec 2018, use 1 Dec 2018
+    mutate(EL_date=ifelse(is.na(EL_date),"2018-12-01 00:00:00", EL_date) %>% 
+               ymd_hms() %>% 
+               if_else(. < ymd_hms("2018-12-01 00:00:00"),
+                       ymd_hms("2018-12-01 00:00:00"), .),
+           # if SR is missing, use PR
+           SR_date=ifelse(ymd_hms(SR_date) %>% is.na,
+                          PR, SR_date) %>% 
+               ymd_hms(),
+           # SR_fever is only for cases with confirmed fever dates
+           SR_fever=ymd_hms(SR_fever)) %>% 
+    # if ER is missing, use SR; if SL is missing, use EL
+    mutate(ER_date=if_else(is.na(ER_date), SR_date, ymd_hms(ER_date)),
+           SL_date=if_else(is.na(SL_date), EL_date, ymd_hms(SL_date)),
+           SL_fever= if_else(is.na(SL_fever) & !is.na(SR_fever), 
+                             SL_date,
+                             ymd_hms(SL_fever))) %>% 
+    # calculate days since 1 Dec 2018
+    mutate(EL=difftime(EL_date, ymd_hms("2018-12-01 00:00:00"), units="days") %>% 
+               as.numeric(),
+           ER=difftime(ER_date, ymd_hms("2018-12-01 00:00:00"), units="days") %>% 
+               as.numeric(),
+           SL=difftime(SL_date, ymd_hms("2018-12-01 00:00:00"), units="days") %>% 
+               as.numeric(),
+           SR=difftime(SR_date, ymd_hms("2018-12-01 00:00:00"), units="days") %>% 
+               as.numeric(),
+           SL_fever=difftime(SL_fever,
+                             ymd_hms("2018-12-01 00:00:00"), units="days") %>% 
+               as.numeric(),
+           SR_fever=difftime(SR_fever,
+                             ymd_hms("2018-12-01 00:00:00"), units="days") %>% 
+               as.numeric(),
+           E_int=ER-EL,
+           S_int=SR-SL,
+           S_fever_int=SR_fever-SL_fever) %>% 
+    # remove any entries missing EL, ER, SL, or SR
+    filter(!is.na(EL_date), !is.na(ER_date), !is.na(SL_date), !is.na(SR_date)) %>% 
+    filter(!is.na(REVIEWER2)) %>% 
+    # remove entries with exposure/onset intervals less than 0
+    # remove entries where ER greater than SR or EL greater than SL
+    # remove entries that haven't been reviewed by two people
+    filter(E_int > 0, S_int > 0, ER<=SR, SL>=EL) %>% 
+    select(EL, ER, SL, SR) %>% 
+    mutate(type=0) %>% 
+    as.data.frame()
+
+ncov_year_fit_asym <- dic.fit(ncov_year_dic,dist="L",
+                             ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
+
+ncov_year_fit_boot <- dic.fit(ncov_year_dic,dist="L", n.boots=1000,
+                             ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
+
+```
+
+```{r year-dic-plots, eval=F}
+## plot the boot fit and table of intervals
+plot(ncov_year_fit_boot, main="EL-2018 results")
+
+year_tbl <- ncov_year_fit_boot@ests[-c(1:2),-4] %>% 
+    as.data.frame()
+year_tbl$diff <- ncov_year_fit_boot@ests[-c(1:2), "est"] - ncov_inc_fit_boot@ests[-c(1:2), "est"]
+knitr::kable(year_tbl)
+```
+
+
+```{r dic-plots}
+## plot the boot fit and table of intervals
+plot(ncov_inc_fit_boot, main="CDF of incubation times",
+     xlab="Incubation time, in days", ylab="", xlim=c(0,20))
+
+knitr::kable(ncov_inc_fit_boot@ests[,-4])
+
+## plot the asymptotic fit and table of intervals
+# plot(ncov_inc_fit_asym, main="asymptotic results")
+# ncov_inc_fit_asym
+```
+
+
+
+## Alternate estimates and sensitivity analyses
+
+### Alternate parameterizations
+
+We fit other commonly-used parameterizations of the incubation period as comparisons to the log-normal distribution: gamma, Weibull, and Erlang. 
+
+```{r other-params}
+all_est_plot <- ncov_inc_fit_boot@ests[-2, -4] %>% 
+    as.data.frame() %>% 
+    mutate(qtile=c("mean", 2.5, 5, 25, 50, 75, 95, 97.5),
+           type="log-normal") %>% 
+    bind_rows(ncov_gam_fit_boot@ests[-2, -4] %>% 
+                  as.data.frame() %>% 
+                  # rename(est_fever=est, CIlow_fever=CIlow,
+                  #        CIhigh_fever=CIhigh) %>% 
+                  mutate(qtile=c("mean",2.5, 5, 25, 50, 75, 95, 97.5),
+                         type="gamma")) %>% 
+    bind_rows(ncov_wei_fit_boot@ests[-2, -4] %>% 
+                  as.data.frame() %>% 
+                  # rename(est_foreign=est, CIlow_foreign=CIlow,
+                  #        CIhigh_foreign=CIhigh) %>% 
+                  mutate(qtile=c("mean", 2.5, 5, 25, 50, 75, 95, 97.5),
+                         type="weibull")) %>% 
+    bind_rows(ncov_erl_fit@ests[-2, -4] %>% 
+                  as.data.frame() %>% 
+                  # rename(est_year=est, CIlow_year=CIlow,
+                  #        CIhigh_year=CIhigh) %>% 
+                  mutate(qtile=c("mean", 2.5, 5, 25, 50, 75, 95, 97.5),
+                         type="erlang")) %>% 
+    mutate(est=ifelse(qtile=="mean", exp(est), est),
+           CIlow=ifelse(qtile=="mean", exp(CIlow), CIlow),
+           CIhigh=ifelse(qtile=="mean", exp(CIhigh), CIhigh),
+           study="JHU-IDD",
+           virus="nCoV") %>% 
+    # bind_rows(other_studies) %>% 
+    filter(qtile %in% c(2.5, 50, 97.5))# %>% 
+    # select(-CIhigh, -CIlow) %>% 
+    # spread(qtile, est, sep="_")
+
+ggplot(data=all_est_plot,
+       aes(y=est, ymin=CIlow, ymax=CIhigh, x=as.factor(qtile), color=type)) +
+    geom_errorbar(height=0.2, position=position_dodge(0.9)) +
+    geom_point(position=position_dodge(0.9)) +
+    scale_y_continuous("Incubation time, in days (with 95% CIs)", limits=c(0,16)) +
+    scale_x_discrete("Estimate quantile") +
+    scale_color_manual("Est\ntype",
+                       values=cbbPalette[c(2,6,1,4)]) +
+    theme_bw() + coord_flip() +
+    theme(axis.text=element_text(color="black"))
+
+dic_lls <- tibble(dist=c("log-normal",
+                         "gamma",
+                         "Weibull",
+                         "Erlang"),
+                  ll=c(ncov_inc_fit_boot@loglik,
+                       ncov_gam_fit_boot@loglik,
+                       ncov_wei_fit_boot@loglik,
+                       ncov_erl_fit@loglik))
+
+# ncov_gam_fit_boot
+# ncov_wei_fit_boot
+# ncov_erl_fit
+```
+
+The median estimates are very similar across parameterizations, while the Weibull distribution has a slightly smaller value at the 2.5th percentile and the log-normal distribution has a slightly larger value at the 97.5th percentile.
+The log-likelihoods were very similar between distributions; the `r dic_lls$dist[which.max(dic_lls$ll)]` distribution having the largest log-likelihood (`r max(dic_lls$ll) %>% round(2)`) and the `r dic_lls$dist[which.min(dic_lls$ll)]` distribution having the smallest log-likelihood (`r min(dic_lls$ll) %>% round(2)`).
+
+The gamma distribution has an estimated shape parameter of `r ncov_gam_fit_boot@ests["shape","est"] %>% round(2)` (95% CI: `r ncov_gam_fit_boot@ests["shape","CIlow"] %>% round(2)`-`r ncov_gam_fit_boot@ests["shape","CIhigh"] %>% round(2)`) and a scale parameter of `r ncov_gam_fit_boot@ests["scale","est"] %>% round(2)` (95% CI: `r ncov_gam_fit_boot@ests["scale","CIlow"] %>% round(2)`-`r ncov_gam_fit_boot@ests["scale","CIhigh"] %>% round(2)`).
+The Weibull distribution has an estimated shape parameter of `r ncov_wei_fit_boot@ests["shape","est"] %>% round(2)` (95% CI: `r ncov_wei_fit_boot@ests["shape","CIlow"] %>% round(2)`-`r ncov_wei_fit_boot@ests["shape","CIhigh"] %>% round(2)`) and a scale parameter of `r ncov_wei_fit_boot@ests["scale","est"] %>% round(2)` (95% CI: `r ncov_wei_fit_boot@ests["scale","CIlow"] %>% round(2)`-`r ncov_wei_fit_boot@ests["scale","CIhigh"] %>% round(2)`).
+The Erlang distribution has an estimated shape parameter of `r ncov_erl_fit@ests["shape","est"] %>% round(2)` (95% CI: `r ncov_erl_fit@ests["shape","CIlow"] %>% round(2)`-`r ncov_erl_fit@ests["shape","CIhigh"] %>% round(2)`) and a scale parameter of `r ncov_erl_fit@ests["scale","est"] %>% round(2)` (95% CI: `r ncov_erl_fit@ests["scale","CIlow"] %>% round(2)`-`r ncov_erl_fit@ests["scale","CIhigh"] %>% round(2)`).
+
+### Sensitivity analyses
+
+To make sure that our overall incubation estimates are sound, we ran a few analyses on subsets to see if the results held up.
+Since the winter often brings cold air and other pathogens that can cause sore throats and coughs, we ran an analysis using only cases that reported a fever.
+Since a plurality of our cases came from Mainland China, where assumptions about local transmission may be less firm, we ran an analysis without those cases.
+Finally, we challenge our assumption that unknown ELs can be assumed to be 2019 December 1 ([Nextstrain estimates that it could have happened as early as September](https://nextstrain.org/ncov?dmax=2019-12-04&m=num_date)), by setting unknown ELs to 2018 December 1.
+
+```{r all-sens-plot, warning=F, message=F}
+all_sens_plot <- ncov_inc_fit_boot@ests[-2, -4] %>% 
+    as.data.frame() %>% 
+    mutate(qtile=c("mean", 2.5, 5, 25, 50, 75, 95, 97.5),
+           type="all") %>% 
+    bind_rows(ncov_fever_fit_boot@ests[-2, -4] %>% 
+                  as.data.frame() %>% 
+                  # rename(est_fever=est, CIlow_fever=CIlow,
+                  #        CIhigh_fever=CIhigh) %>% 
+                  mutate(qtile=c("mean",2.5, 5, 25, 50, 75, 95, 97.5),
+                         type="fever")) %>% 
+    bind_rows(ncov_foreign_fit_boot@ests[-2, -4] %>% 
+                  as.data.frame() %>% 
+                  # rename(est_foreign=est, CIlow_foreign=CIlow,
+                  #        CIhigh_foreign=CIhigh) %>% 
+                  mutate(qtile=c("mean", 2.5, 5, 25, 50, 75, 95, 97.5),
+                         type="non-Mainland")) %>% 
+    bind_rows(ncov_year_fit_boot@ests[-2, -4] %>% 
+                  as.data.frame() %>% 
+                  # rename(est_year=est, CIlow_year=CIlow,
+                  #        CIhigh_year=CIhigh) %>% 
+                  mutate(qtile=c("mean", 2.5, 5, 25, 50, 75, 95, 97.5),
+                         type="EL-2018")) %>% 
+    mutate(est=ifelse(qtile=="mean", exp(est), est),
+           CIlow=ifelse(qtile=="mean", exp(CIlow), CIlow),
+           CIhigh=ifelse(qtile=="mean", exp(CIhigh), CIhigh),
+           study="JHU-IDD",
+           virus="nCoV") %>% 
+    # bind_rows(other_studies) %>% 
+    filter(qtile %in% c(2.5, 50, 97.5))# %>% 
+    # select(-CIhigh, -CIlow) %>% 
+    # spread(qtile, est, sep="_")
+
+ggplot(data=all_sens_plot,
+       aes(y=est, ymin=CIlow, ymax=CIhigh, x=as.factor(qtile), color=type)) +
+    geom_errorbar(height=0.2, position=position_dodge(0.9)) +
+    geom_point(position=position_dodge(0.9)) +
+    scale_y_continuous("Incubation time, in days (with 95% CIs)", limits=c(0,21)) +
+    scale_x_discrete("Estimate quantile") +
+    scale_color_manual("Est\ntype",
+                       values=cbbPalette[c(1,6,4,7)]) +
+    theme_bw() + coord_flip() +
+    theme(axis.text=element_text(color="black"))
+```
+
+## Comparison to Backer
+
+[Backer, Klinkenberg, & Wallinga](https://www.medrxiv.org/content/10.1101/2020.01.27.20018986v1.full.pdf+html) estimated the incubation windows based on 34 early nCoV cases that traveled from Wuhan to other regions in China.
+A comparison of our incubation windows are shown below:
+
+```{r comparison}
+other_studies <- read_csv("data/other-studies.csv")
+backer_comp <- ncov_inc_fit_boot@ests[-2, -4] %>% 
+    as.data.frame() %>% 
+    mutate(qtile=c("mean", 2.5, 5, 25, 50, 75, 95, 97.5),
+           type="all") %>% 
+    bind_rows(ncov_fever_fit_boot@ests[-2, -4] %>% 
+                  as.data.frame() %>% 
+                  # rename(est_fever=est, CIlow_fever=CIlow,
+                  #        CIhigh_fever=CIhigh) %>% 
+                  mutate(qtile=c("mean",2.5, 5, 25, 50, 75, 95, 97.5),
+                         type="fever")) %>% 
+    bind_rows(ncov_foreign_fit_boot@ests[-2, -4] %>% 
+                  as.data.frame() %>% 
+                  # rename(est_foreign=est, CIlow_foreign=CIlow,
+                  #        CIhigh_foreign=CIhigh) %>% 
+                  mutate(qtile=c("mean", 2.5, 5, 25, 50, 75, 95, 97.5),
+                         type="non-Mainland")) %>% 
+    bind_rows(ncov_year_fit_boot@ests[-2, -4] %>% 
+                  as.data.frame() %>% 
+                  # rename(est_year=est, CIlow_year=CIlow,
+                  #        CIhigh_year=CIhigh) %>% 
+                  mutate(qtile=c("mean", 2.5, 5, 25, 50, 75, 95, 97.5),
+                         type="EL-2018")) %>% 
+    mutate(est=ifelse(qtile=="mean", exp(est), est),
+           CIlow=ifelse(qtile=="mean", exp(CIlow), CIlow),
+           CIhigh=ifelse(qtile=="mean", exp(CIhigh), CIhigh),
+           study="JHU-IDD",
+           virus="nCoV") %>% 
+    bind_rows(other_studies) %>% 
+    filter(qtile %in% c(2.5, 50, 97.5)) %>% 
+    select(-CIhigh, -CIlow) %>% 
+    spread(qtile, est, sep="_")
+
+ggplot(data=backer_comp,
+       aes(y=qtile_50, ymin=qtile_2.5, ymax=qtile_97.5, x=paste(study, type),
+           color=study)) +
+    geom_errorbar(width=0.2, position=position_dodge(0.9)) +
+    geom_point(position=position_dodge(0.9)) +
+    scale_y_continuous("Incubation time, in days (with 95% windows)",
+                       limits=c(0,16)) +
+    scale_x_discrete("") +
+    scale_color_manual("Est\ntype",
+                       values=cbbPalette[c(2,6,4,7)],
+                       guide="none") +
+    theme_bw() + coord_flip() +
+    theme(axis.text=element_text(color="black"))
+```
