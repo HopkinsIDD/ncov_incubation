@@ -1,7 +1,7 @@
 Real-time estimation of the Wuhan coronavirus incubation time
 =============================================================
 
-Updated: Wed Jan 29 12:31:57 2020
+Updated: Wed Jan 29 14:30:41 2020
 
 Our lab has been collecting data (freely available at
 [`data/nCoV-IDD-traveler-data.csv`](https://github.com/HopkinsIDD/ncov_incubation/blob/master/data/nCoV-IDD-traveler-data.csv))
@@ -28,11 +28,11 @@ Quick links:
 Data summary
 ------------
 
-There are 101 cases that have been double-checked by our team. Of those
-34 are known to be female (34%) and 63 are male (62%). The median age is
-about 52 years (IQR: 36.5-59). 29 cases are from Mainland China (29%),
-while 72 are from the rest of the world (71%). 61 cases presented with a
-fever (60%).
+There are 101 cases from 38 countries and provinces outside of Hubei,
+China. Of those 34 are known to be female (34%) and 63 are male (62%).
+The median age is about 52 years (IQR: 36.5-59). 29 cases are from
+Mainland China (29%), while 72 are from the rest of the world (71%). 61
+cases presented with a fever (60%).
 
 <img src="README_files/figure-markdown_strict/data-summary-1.png" alt="This figure displays the exposure and symptom onset windows for each case in our dataset, relative to the right-bound of the exposure window (ER). The blue bars indicate the the exposure windows and the red bars indicate the symptom onset windows for each case. Purple areas are where those two bars overlap."  />
 <p class="caption">
@@ -157,6 +157,23 @@ distribution.
 Alternate estimates and sensitivity analyses
 --------------------------------------------
 
+### Alternate parameterizations
+
+We fit other commonly-used parameterizations of the incubation period as
+comparisons to the log-normal distribution: gamma, Weibull, and Erlang.
+
+<img src="README_files/figure-markdown_strict/other-params-1.png" style="display: block; margin: auto;" />
+
+The median estimates are very similar across parameterizations, while
+the Weibull distribution has a slightly smaller value at the 2.5th
+percentile and the log-normal distribution has a slightly larger value
+at the 97.5th percentile. The log-likelihoods were very similar between
+distributions; the log-normal distribution having the largest
+log-likelihood (62.05) and the Erlang distribution having the smallest
+log-likelihood (60.96).
+
+### Sensitivity analyses
+
 To make sure that our overall incubation estimates are sound, we ran a
 few analyses on subsets to see if the results held up. Since the winter
 often brings cold air and other pathogens that can cause sore throats
@@ -199,9 +216,9 @@ incubation windows are shown below:
 
 <img src="README_files/figure-markdown_strict/comparison-1.png" style="display: block; margin: auto;" />
 
-The median estimates from all models lie between and -. The reduction in
-confidence interval widths may be due to the difference in the number of
-observations used to estimate each model.
+The median estimates from all models lie between 5.1 and 5.765. The
+reduction in confidence interval widths may be due to the difference in
+the number of observations used to estimate each model.
 
 *(Qulu Zheng, Hannah Meredith, Kyra Grantz, Qifang Bi, Forrest Jones,
 and Stephen Lauer all contributed to this project)*
