@@ -371,7 +371,8 @@ ggplot(data=all_est_plot,
     scale_x_discrete("Estimate quantile") +
     scale_color_manual("Est\ntype",
                        values=cbbPalette[c(2,6,4,7)]) +
-    theme_bw() + coord_flip()
+    theme_bw() + coord_flip() +
+    theme(axis.text=element_text(color="black"))
 ```
 
 Using only fevers, the estimates are `r min(ncov_fever_fit_boot@ests[-c(1:2),"est"]-ncov_inc_fit_boot@ests[-c(1:2),"est"])` to `r max(ncov_fever_fit_boot@ests[-c(1:2),"est"]-ncov_inc_fit_boot@ests[-c(1:2),"est"])` days longer than the estimates on the full data.
@@ -435,7 +436,8 @@ ggplot(data=all_est_plot,
     scale_color_manual("Est\ntype",
                        values=cbbPalette[c(2,6,4,7)],
                        guide="none") +
-    theme_bw() + coord_flip()
+    theme_bw() + coord_flip() +
+    theme(axis.text=element_text(color="black"))
 ```
 
 The median estimates from all models lie between `r min(all_est_plot$qtile_50)` and `r max(all_est_plot$qtile_50)`.
