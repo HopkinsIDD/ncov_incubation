@@ -92,6 +92,10 @@ ncov_foreign <- ncov %>% filter(COUNTRY.DEST != "China" | PROVINCE.DEST %in% c("
 
 ## only fevers outside of China
 ncov_foreign_fever <- ncov_foreign %>% filter(!is.na(SL_fever) | !is.na(SR_fever))
+
+## only cases within mainland China
+ncov_mainland <- ncov %>% filter(COUNTRY.DEST == "China" & !(PROVINCE.DEST %in% c("HongKong", "Macau")))
+
 ```
 
 ## Data summary
@@ -154,8 +158,8 @@ ggplot(dat_sum, aes(y=factor(UID))) +
     geom_point(aes(x=Emid, y=factor(UID)), size=0.5, color="#0072B2") +
     geom_point(aes(x=Smid, y=factor(UID)), size=0.5, color="#CC0000") +
     geom_segment(aes(x=Emid, xend=Smid, yend=factor(UID)), size=0.33, color="#999999") +
-    ggtitle("Exposure and symptom onset windows") +
-    scale_x_continuous("Days since exposure") +
+    #ggtitle("Exposure and symptom onset windows") +
+    scale_x_continuous("Days from last possible exposure") +
     scale_y_discrete("Case") +
     theme_bw() +
     theme(axis.text.y = element_blank(),
@@ -279,6 +283,32 @@ knitr::kable(foreign_tbl)
 # ncov_foreign_fit_asym
 ```
 
+```{r fit-mainland-dics, results='hide', cache=T}
+set.seed(1)
+ncov_mainland_dic <- ncov_mainland %>% 
+    select(EL, ER, SL, SR) %>% 
+    mutate(type=0) %>% 
+    as.data.frame()
+
+ncov_mainland_fit_asym <- dic.fit(ncov_mainland_dic,dist="L",
+                             ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
+
+ncov_mainland_fit_boot <- dic.fit(ncov_mainland_dic,dist="L", n.boots=1000,
+                             ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
+
+```
+
+```{r mainland-dic-plots, eval=F}
+## plot the boot fit and table of intervals
+plot(ncov_mainland_fit_boot, main="non-mainland results")
+
+mainland_tbl <- ncov_mainland_fit_boot@ests[-c(1:2),-4] %>% 
+    as.data.frame()
+mainland_tbl$diff <- ncov_mainland_fit_boot@ests[-c(1:2), "est"] - ncov_inc_fit_boot@ests[-c(1:2), "est"]
+knitr::kable(mainland_tbl)
+
+```
+
 ```{r fit-year-dics, results='hide', cache=T}
 set.seed(1)
 ## change dates to restrict exposure to after December 1
@@ -351,14 +381,16 @@ knitr::kable(year_tbl)
 
 ```{r dic-plots}
 ## plot the boot fit and table of intervals
-plot(ncov_inc_fit_boot, main="CDF of incubation times",
-     xlab="Incubation time, in days", ylab="", xlim=c(0,20))
+ci.col <- rgb(230/255,85/255,13/255,1)
+
+plot(ncov_inc_fit_boot, ylab="Proportion symptomatic cases with symptoms",
+     xlab="Days after infection", main="", xlim=c(0,20))
+points(y=rep(0.025,2), x=c(ncov_inc_fit_boot@ests['p2.5','CIlow'], ncov_inc_fit_boot@ests['p2.5','CIhigh']), type='l', col=ci.col, lwd=2.5)
+points(y=rep(0.5,2), x=c(ncov_inc_fit_boot@ests['p50','CIlow'], ncov_inc_fit_boot@ests['p50','CIhigh']), type='l', col=ci.col, lwd=2.5)
+points(y=rep(0.975,2), x=c(ncov_inc_fit_boot@ests['p97.5','CIlow'], ncov_inc_fit_boot@ests['p97.5','CIhigh']), type='l', col=ci.col, lwd=2.5)
 
 knitr::kable(ncov_inc_fit_boot@ests[,-4])
 
-## plot the asymptotic fit and table of intervals
-# plot(ncov_inc_fit_asym, main="asymptotic results")
-# ncov_inc_fit_asym
 ```
 
 
@@ -567,3 +599,5 @@ comparison_plot <- ggplot(data=backer_comp,
 
 grid.arrange(all_sens_plot, comparison_plot)
 ```
+
+
