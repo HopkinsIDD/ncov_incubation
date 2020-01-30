@@ -1,19 +1,19 @@
-Real-time estimation of the Wuhan coronavirus incubation time
+Real-time estimation of the novel coronavirus incubation time
 =============================================================
 
-Updated: Thu Jan 30 13:01:11 2020
+Updated: Thu Jan 30 14:31:29 2020
 
 Our lab has been collecting data (freely available at
 [`data/nCoV-IDD-traveler-data.csv`](https://github.com/HopkinsIDD/ncov_incubation/blob/master/data/nCoV-IDD-traveler-data.csv))
-on the exposure and symptom onset for Wuhan novel coronavirus
-(nCoV-2019) cases that have been confirmed outside of the Hubei
-province. These cases have been confirmed either in other countries or
-in regions of China with no known local transmission. We search for news
-articles and reports in both English and Chinese and abstract the data
-necessary to estimate the incubation period of nCoV-2019. Two team
-members independently review the full text of each case report to ensure
-that data is correctly input. Discrepancies are resolved by discussion
-and consensus.
+on the exposure and symptom onset for novel coronavirus (nCoV-2019)
+cases that have been confirmed outside of the Hubei province. These
+cases have been confirmed either in other countries or in regions of
+China with no known local transmission. We search for news articles and
+reports in both English and Chinese and abstract the data necessary to
+estimate the incubation period of nCoV-2019. Two team members
+independently review the full text of each case report to ensure that
+data is correctly input. Discrepancies are resolved by discussion and
+consensus.
 
 Quick links:
 
