@@ -331,7 +331,6 @@ dat_sum <- ncov %>%
            Smid = (SLnew + SRnew)/2,
            UID=reorder(UID, SR-EL))
 
-
 ggplot(dat_sum, aes(y=factor(UID))) + 
     geom_segment(aes(x=ELnew, xend=ERnew, yend=factor(UID)), 
                  color="#0072B2", size=2, alpha=.25) +
@@ -340,14 +339,17 @@ ggplot(dat_sum, aes(y=factor(UID))) +
     geom_point(aes(x=Emid, y=factor(UID)), size=0.5, color="#0072B2") +
     geom_point(aes(x=Smid, y=factor(UID)), size=0.5, color="#CC0000") +
     geom_segment(aes(x=Emid, xend=Smid, yend=factor(UID)), size=0.33, color="#999999") +
-    ggtitle("Exposure and symptom onset windows") +
-    scale_x_continuous("Days since exposure") +
+    #ggtitle("Exposure and symptom onset windows") +
+    scale_x_continuous("Days from last possible exposure") +
     scale_y_discrete("Case") +
     theme_bw() +
     theme(axis.text.y = element_blank(),
           axis.ticks.y= element_blank(),
           axis.text.x=element_text(color="black"))
 ```
+
+The bars where the exposure and symptom onset windows completely overlap are frequently travelers from Wuhan who were symptomatic on arrival to another country, that did not release further details.
+These cases could have been exposed or symptomatic at any point prior to their trip
 
 ## Exposure and symptom onset windows
 

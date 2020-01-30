@@ -28,7 +28,8 @@ library(tidyverse)
 library(lubridate)
 library(coarseDataTools)
 library(gridExtra)
-library(rstan)
+# devtools::install_github("reichlab/activemonitr")
+library(activeMonitr)
 cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
 set.seed(1)
@@ -600,4 +601,59 @@ comparison_plot <- ggplot(data=backer_comp,
 grid.arrange(all_sens_plot, comparison_plot)
 ```
 
+```{r missed-cases}
+## Figure 1
+## plot with x-axis in days, y axis as cases missed per XX monitored 
+## (similar to fig 3 of activemonitr manuscript)
+
+ncov_gamma_dat <- tibble(shape=ncov_gam_fit_boot@samples$par1,
+                         scale=ncov_gam_fit_boot@samples$par2,
+                         idx=seq(nrow(ncov_gam_fit_boot@samples))) %>% 
+    mutate(median=qgamma(0.5, shape=shape, scale=scale),
+           p95=qgamma(0.95, shape=shape, scale=scale),
+           chain=1)
+
+phis <- c(1/100, 1/1000, 1/10000)
+durs <- 1:25
+yrange <- c(1e-18, 1e-2)
+
+## determine max u for each disease such that max(u)/2 + m = 90th percentile of T
+tmp_ncov <- mean(qgamma(.90, shape=ncov_gamma_dat$shape, 
+                        scale=ncov_gamma_dat$scale))
+maxu_ncov <- 2*(tmp_ncov - mean(ncov_gamma_dat$median))
+
+## make plots/data
+ncov_monitor_probs <- plot_risk_uncertainty(ncov_gamma_dat,# phi=phis, 
+                                            max_u = maxu_ncov,
+                                            durations=durs, 
+                                            return_plot=FALSE,
+                                            return_data=TRUE,
+                                            include_xlab = FALSE, yrange=yrange, 
+                                            include_legend=FALSE)
+
+ncov_monitor_cases <- ncov_monitor_probs$data %>% 
+    mutate(
+        escaped_cases_per_1k_p05 = p05 * 1000,
+        escaped_cases_per_1k_p50 = p50 * 1000,
+        escaped_cases_per_1k_p95 = p95 * 1000,
+        risk_group = factor(phi, levels=phis,
+                            labels=c("high risk (1 in 100)",
+                                     "some risk (1 in 1,000)",
+                                     "low risk (1 in 10,000)"))
+    )
+
+ggplot(ncov_monitor_cases,
+       aes(x=d, y=escaped_cases_per_1k_p50, color=risk_group,
+           group=risk_group, fill=risk_group)) +
+    geom_ribbon(aes(ymin=escaped_cases_per_1k_p05,
+                    ymax=escaped_cases_per_1k_p95), alpha=.5) +
+    geom_line(size=2) +
+    ylab("expected cases missed per 1,000 monitored") +
+    xlab("duration of monitoring (days)") +
+    scale_color_brewer(type="qual") + 
+    scale_fill_brewer(type="qual") + 
+    theme_bw() +
+    # scale_y_log10()+
+    theme(legend.position = c(.8,.8), legend.justification = c(1,1))
+```
 
