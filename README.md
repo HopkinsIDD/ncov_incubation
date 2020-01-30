@@ -1,7 +1,7 @@
 Real-time estimation of the Wuhan coronavirus incubation time
 =============================================================
 
-Updated: Wed Jan 29 15:54:01 2020
+Updated: Wed Jan 29 20:48:20 2020
 
 Our lab has been collecting data (freely available at
 [`data/nCoV-IDD-traveler-data.csv`](https://github.com/HopkinsIDD/ncov_incubation/blob/master/data/nCoV-IDD-traveler-data.csv))
@@ -164,6 +164,47 @@ comparisons to the log-normal distribution: gamma, Weibull, and Erlang.
 
 <img src="README_files/figure-markdown_strict/other-params-1.png" style="display: block; margin: auto;" />
 
+    ## Coarse Data Model Parameter and Quantile Estimates: 
+    ##         est CIlow CIhigh    SD
+    ## shape 7.916 3.967 24.984 5.597
+    ## scale 0.693 0.209  1.517 0.336
+    ## p2.5  2.356 1.533  3.471 0.496
+    ## p5    2.718 1.937  3.775 0.470
+    ## p25   4.078 3.431  4.885 0.372
+    ## p50   5.258 4.546  6.153 0.415
+    ## p75   6.648 5.500  8.094 0.671
+    ## p95   9.039 6.788 11.830 1.336
+    ## p97.5 9.919 7.222 13.322 1.615
+    ## 
+    ## -2*Log Likelihood = -123.8
+
+    ## Coarse Data Model Parameter and Quantile Estimates: 
+    ##         est CIlow CIhigh    SD
+    ## shape 3.107 2.198  6.078 1.015
+    ## scale 6.108 5.186  7.248 0.527
+    ## p2.5  1.871 1.185  3.125 0.519
+    ## p5    2.348 1.625  3.576 0.511
+    ## p25   4.090 3.388  4.982 0.407
+    ## p50   5.428 4.680  6.353 0.430
+    ## p75   6.785 5.592  8.155 0.671
+    ## p95   8.695 6.571 11.167 1.232
+    ## p97.5 9.297 6.851 12.112 1.441
+    ## 
+    ## -2*Log Likelihood = -122.9
+
+    ## Coarse Data Model Parameter and Quantile Estimates: 
+    ##          est CIlow CIhigh
+    ## shape 14.000 5.000 21.000
+    ## scale  0.403 0.260  1.114
+    ## p2.5   2.921 1.907  3.587
+    ## p5     3.221 2.298  3.909
+    ## p25    4.328 3.637  5.051
+    ## p50    5.254 4.618  6.140
+    ## p75    6.421 5.567  7.725
+    ## p95    8.124 7.013 10.639
+    ## p97.5  8.782 7.516 11.797
+    ## Note: please check that the MCMC converged on the target distribution by running multiple chains. MCMC samples are available in the mcmc slot (e.g. my.fit@mcmc)
+
 The median estimates are very similar across parameterizations, while
 the Weibull distribution has a slightly smaller value at the 2.5th
 percentile and the log-normal distribution has a slightly larger value
@@ -223,9 +264,9 @@ incubation windows are shown below:
 
 <img src="README_files/figure-markdown_strict/comparison-1.png" style="display: block; margin: auto;" />
 
-The median estimates from all models lie between 5.1 and 5.765. The
-reduction in confidence interval widths may be due to the difference in
-the number of observations used to estimate each model.
+The median estimates from all models lie between 5.1038747 and 5.607628.
+The reduction in confidence interval widths may be due to the difference
+in the number of observations used to estimate each model.
 
 *(Qulu Zheng, Hannah Meredith, Kyra Grantz, Qifang Bi, Forrest Jones,
 and Stephen Lauer all contributed to this project)*
