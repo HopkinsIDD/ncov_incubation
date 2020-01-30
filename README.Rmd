@@ -604,7 +604,7 @@ ggplot(data=backer_comp,
     theme(axis.text=element_text(color="black"))
 ```
 
-The median estimates from all models lie between `r min(backer_comp$qtile_50)` and `r max(backer_comp$qtile_50)`.
-The reduction in confidence interval widths may be due to the difference in the number of observations used to estimate each model.
+The median estimates from all models lie between `r min(backer_comp$qtile_50) %>% round(2)` and `r max(backer_comp$qtile_50) %>% round(2)`.
+The lower and upper tails for our distributions are all closer to the median than their Backer *et al* equivalents, whether this is due to having more data or our different estimation methodologies is open for investigation.
 
 *(Qulu Zheng, Hannah Meredith, Kyra Grantz, Qifang Bi, Forrest Jones, and Stephen Lauer all contributed to this project)*
