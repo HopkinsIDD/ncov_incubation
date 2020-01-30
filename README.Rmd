@@ -512,8 +512,9 @@ Somewhat surprisingly, this changes the estimates less than either of the other 
 
 ## Comparison to Backer
 
-[Backer, Klinkenberg, & Wallinga](https://www.medrxiv.org/content/10.1101/2020.01.27.20018986v1.full.pdf+html) estimated the incubation windows based on 34 early nCoV cases that traveled from Wuhan to other regions in China.
-A comparison of our incubation windows are shown below:
+[Backer, Klinkenberg, & Wallinga](https://www.medrxiv.org/content/10.1101/2020.01.27.20018986v1.full.pdf+html) estimated the incubation period based on 34 early nCoV cases that traveled from Wuhan to other regions in China.
+[Li *et al*](https://www.nejm.org/doi/full/10.1056/NEJMoa2001316) estimated the incubation period based on the first 425 laboratory-confirmed cases in Wuhan.
+A comparison of our incubation periods are shown below:
 
 ```{r comparison}
 backer_params <- read_csv("data/backer-params.csv")
@@ -523,20 +524,14 @@ backer_comp <- ncov_inc_fit_boot@ests[-2, -4] %>%
            type="log-normal") %>% 
     bind_rows(ncov_gam_fit_boot@ests[-2, -4] %>%
                   as.data.frame() %>%
-                  # rename(est_fever=est, CIlow_fever=CIlow,
-                  #        CIhigh_fever=CIhigh) %>%
                   mutate(qtile=c("mean",2.5, 5, 25, 50, 75, 95, 97.5),
                          type="gamma")) %>%
     bind_rows(ncov_wei_fit_boot@ests[-2, -4] %>% 
                   as.data.frame() %>% 
-                  # rename(est_foreign=est, CIlow_foreign=CIlow,
-                  #        CIhigh_foreign=CIhigh) %>% 
                   mutate(qtile=c("mean",2.5, 5, 25, 50, 75, 95, 97.5),
                          type="weibull")) %>% 
     bind_rows(ncov_erl_fit@ests[-2, -4] %>%
                   as.data.frame() %>%
-                  # rename(est_year=est, CIlow_year=CIlow,
-                  #        CIhigh_year=CIhigh) %>%
                   mutate(qtile=c("mean",2.5, 5, 25, 50, 75, 95, 97.5),
                          type="erlang")) %>%
     mutate(est=ifelse(qtile=="mean", exp(est), est),
@@ -575,20 +570,6 @@ backer_comp <- ncov_inc_fit_boot@ests[-2, -4] %>%
                                                  qlnorm(.975, par1, par2)))) %>% 
                   select(-par1, -par2))
 
-# ggplot(data=backer_comp,
-#        aes(y=qtile_50, ymin=qtile_2.5, ymax=qtile_97.5, x=paste(study, type),
-#            color=study)) +
-#     geom_errorbar(width=0.2, position=position_dodge(0.9)) +
-#     geom_point(position=position_dodge(0.9)) +
-#     scale_y_continuous("Incubation time, in days (with 95% windows)",
-#                        limits=c(0,16)) +
-#     scale_x_discrete("") +
-#     scale_color_manual("Est\ntype",
-#                        values=cbbPalette[c(2,6,4,7)],
-#                        guide="none") +
-#     theme_bw() + coord_flip() +
-#     theme(axis.text=element_text(color="black"))
-
 ggplot(data=backer_comp,
        aes(middle=qtile_50, ymin=qtile_2.5, ymax=qtile_97.5,
            lower=qtile_25, upper=qtile_75, x=type,
@@ -605,6 +586,6 @@ ggplot(data=backer_comp,
 ```
 
 The median estimates from all models lie between `r min(backer_comp$qtile_50) %>% round(2)` and `r max(backer_comp$qtile_50) %>% round(2)`.
-The lower and upper tails for our distributions are all closer to the median than their Backer *et al* equivalents, whether this is due to having more data or our different estimation methodologies is open for investigation.
+The lower and upper tails for our distributions are all closer to the median than from the other studies, whether this is due to differences in data or in estimation methodologies is open for investigation.
 
 *(Qulu Zheng, Hannah Meredith, Kyra Grantz, Qifang Bi, Forrest Jones, and Stephen Lauer all contributed to this project)*

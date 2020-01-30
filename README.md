@@ -1,7 +1,7 @@
 Real-time estimation of the Wuhan coronavirus incubation time
 =============================================================
 
-Updated: Thu Jan 30 09:23:20 2020
+Updated: Thu Jan 30 09:31:25 2020
 
 Our lab has been collecting data (freely available at
 [`data/nCoV-IDD-traveler-data.csv`](https://github.com/HopkinsIDD/ncov_incubation/blob/master/data/nCoV-IDD-traveler-data.csv))
@@ -217,17 +217,18 @@ Comparison to Backer
 
 [Backer, Klinkenberg, &
 Wallinga](https://www.medrxiv.org/content/10.1101/2020.01.27.20018986v1.full.pdf+html)
-estimated the incubation windows based on 34 early nCoV cases that
-traveled from Wuhan to other regions in China. A comparison of our
-incubation windows are shown below:
+estimated the incubation period based on 34 early nCoV cases that
+traveled from Wuhan to other regions in China. [Li *et
+al*](https://www.nejm.org/doi/full/10.1056/NEJMoa2001316) estimated the
+incubation period based on the first 425 laboratory-confirmed cases in
+Wuhan. A comparison of our incubation periods are shown below:
 
 <img src="README_files/figure-markdown_strict/comparison-1.png" style="display: block; margin: auto;" />
 
 The median estimates from all models lie between 4.14 and 5.61. The
 lower and upper tails for our distributions are all closer to the median
-than their Backer *et al* equivalents, whether this is due to having
-more data or our different estimation methodologies is open for
-investigation.
+than from the other studies, whether this is due to differences in data
+or in estimation methodologies is open for investigation.
 
 *(Qulu Zheng, Hannah Meredith, Kyra Grantz, Qifang Bi, Forrest Jones,
 and Stephen Lauer all contributed to this project)*
