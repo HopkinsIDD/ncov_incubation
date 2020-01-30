@@ -362,7 +362,7 @@ The first model we fit is to all of the data and output the median, 2.5th, and 9
 
 ```{r dic-plots}
 ## plot the boot fit and table of intervals
-plot(ncov_inc_fit_boot, main="CDF of incubation times",
+plot(ncov_inc_fit_asym, main="CDF of incubation times",
      xlab="Incubation time, in days", ylab="", xlim=c(0,20))
 
 knitr::kable(ncov_inc_fit_boot@ests[,-4])
@@ -599,7 +599,7 @@ ggplot(data=backer_comp,
                        limits=c(0,16)) +
     scale_x_discrete("Distribution") +
     scale_fill_manual("Study",
-                       values=cbbPalette[c(2,3)]) +
+                       values=cbbPalette[c(2,3,4)]) +
     theme_bw() + coord_flip() +
     theme(axis.text=element_text(color="black"))
 ```

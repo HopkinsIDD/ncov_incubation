@@ -1,7 +1,7 @@
 Real-time estimation of the Wuhan coronavirus incubation time
 =============================================================
 
-Updated: Wed Jan 29 20:56:05 2020
+Updated: Thu Jan 30 09:23:20 2020
 
 Our lab has been collecting data (freely available at
 [`data/nCoV-IDD-traveler-data.csv`](https://github.com/HopkinsIDD/ncov_incubation/blob/master/data/nCoV-IDD-traveler-data.csv))
@@ -223,10 +223,10 @@ incubation windows are shown below:
 
 <img src="README_files/figure-markdown_strict/comparison-1.png" style="display: block; margin: auto;" />
 
-The median estimates from all models lie between 5.1 and 5.61. The lower
-and upper tails for our distributions are all closer to the median than
-their Backer *et al* equivalents, whether this is due to having more
-data or our different estimation methodologies is open for
+The median estimates from all models lie between 4.14 and 5.61. The
+lower and upper tails for our distributions are all closer to the median
+than their Backer *et al* equivalents, whether this is due to having
+more data or our different estimation methodologies is open for
 investigation.
 
 *(Qulu Zheng, Hannah Meredith, Kyra Grantz, Qifang Bi, Forrest Jones,
