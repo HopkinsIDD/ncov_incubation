@@ -89,6 +89,8 @@ ncov_foreign <- ncov %>%
 ## only fevers outside of China
 ncov_foreign_fever <- ncov_foreign %>% 
     filter(!is.na(SL_fever) | !is.na(SR_fever))
+
+backer_params <- read_csv("data/backer-params.csv")
 ```
 
 ```{r fill-in-values}
@@ -308,7 +310,8 @@ Quick links:
 - [Exposure and symptom onset windows](#exposure-and-symptom-onset-windows)
 - [Incubation period estimates](#incubation-period-estimates)
 - [Alternate estimates and sensitivity analyses](#alternate-estimates-and-sensitivity-analyses)
-- [Comparison to Backer](#comparison-to-backer)
+- [Comparison to other estimates](#comparison-to-other-estimates)
+- [Parameter estimates](#parameter-estimates)
 
 ## Data summary
 
@@ -408,8 +411,7 @@ all_est_plot <- ncov_inc_fit_boot@ests[-2, -4] %>%
     mutate(est=ifelse(qtile=="mean", exp(est), est),
            CIlow=ifelse(qtile=="mean", exp(CIlow), CIlow),
            CIhigh=ifelse(qtile=="mean", exp(CIhigh), CIhigh),
-           study="JHU-IDD",
-           virus="nCoV") %>% 
+           study="JHU-IDD") %>% 
     # bind_rows(other_studies) %>% 
     filter(qtile %in% c(2.5, 50, 97.5))# %>% 
     # select(-CIhigh, -CIlow) %>% 
@@ -480,8 +482,7 @@ all_sens_plot <- ncov_inc_fit_boot@ests[-2, -4] %>%
     mutate(est=ifelse(qtile=="mean", exp(est), est),
            CIlow=ifelse(qtile=="mean", exp(CIlow), CIlow),
            CIhigh=ifelse(qtile=="mean", exp(CIhigh), CIhigh),
-           study="JHU-IDD",
-           virus="nCoV") %>% 
+           study="JHU-IDD") %>% 
     # bind_rows(other_studies) %>% 
     filter(qtile %in% c(2.5, 50, 97.5))# %>% 
     # select(-CIhigh, -CIlow) %>% 
@@ -510,14 +511,13 @@ There is a bit of a gap on the long end of the tail, but the confidence interval
 When we set the unknown ELs to 2018 December 1 instead of 2019 December 1, the estimates are `r min(ncov_year_fit_boot@ests[-c(1:2),"est"]-ncov_inc_fit_boot@ests[-c(1:2),"est"])` to `r max(ncov_year_fit_boot@ests[-c(1:2),"est"]-ncov_inc_fit_boot@ests[-c(1:2),"est"])` days longer than the estimates on the full data.
 Somewhat surprisingly, this changes the estimates less than either of the other alternate estimates. 
 
-## Comparison to Backer
+## Comparison to other estimates
 
 [Backer, Klinkenberg, & Wallinga](https://www.medrxiv.org/content/10.1101/2020.01.27.20018986v1.full.pdf+html) estimated the incubation period based on 34 early nCoV cases that traveled from Wuhan to other regions in China.
-[Li *et al*](https://www.nejm.org/doi/full/10.1056/NEJMoa2001316) estimated the incubation period based on the first 425 laboratory-confirmed cases in Wuhan.
+[Li *et al*](https://www.nejm.org/doi/full/10.1056/NEJMoa2001316) estimated the incubation period based on the 10 laboratory-confirmed cases in Wuhan.
 A comparison of our incubation periods are shown below:
 
 ```{r comparison}
-backer_params <- read_csv("data/backer-params.csv")
 backer_comp <- ncov_inc_fit_boot@ests[-2, -4] %>% 
     as.data.frame() %>% 
     mutate(qtile=c("mean",2.5, 5, 25, 50, 75, 95, 97.5),
@@ -537,11 +537,11 @@ backer_comp <- ncov_inc_fit_boot@ests[-2, -4] %>%
     mutate(est=ifelse(qtile=="mean", exp(est), est),
            CIlow=ifelse(qtile=="mean",exp(CIlow), CIlow),
            CIhigh=ifelse(qtile=="mean",exp(CIhigh), CIhigh),
-           study="JHU-IDD",
-           virus="nCoV") %>% 
+           study="JHU-IDD") %>% 
     filter(qtile %in% c(2.5, 25, 50, 75, 97.5)) %>% 
     select(-CIhigh, -CIlow) %>%
     spread(qtile, est, sep="_") %>%
+    mutate(obs=nrow(ncov)) %>% 
     bind_rows(backer_params %>% 
                   mutate(`qtile_2.5`=ifelse(type=="weibull",
                                           qweibull(.025, par1, par2),
@@ -592,5 +592,43 @@ ggplot(data=backer_comp,
 
 The median estimates from all models lie between `r min(backer_comp$qtile_50) %>% round(2)` and `r max(backer_comp$qtile_50) %>% round(2)`.
 The lower and upper tails for our distributions are all closer to the median than from the other studies, whether this is due to differences in data or in estimation methodologies is open for investigation.
+
+## Parameter estimates
+
+For the convenience of researchers who need parameter estimates for making infectious disease models, we include a table of the parameter estimates from our analysis and inferred from the other analyses. The parameters are different for each distribution; par1 and par2 are log-mean and log-sd of the log-normal distribution, while they are the shape and scale parameters for the gamma, Weibull, and Erlang distributions.
+
+```{r param-est}
+param_est <- ncov_inc_fit_boot@ests[1:2, "est"] %>% t() %>% 
+    as.data.frame() %>% 
+    rename(par1=meanlog, par2=sdlog) %>% 
+    mutate(study="JHU-IDD",
+           type="log-normal",
+           obs=nrow(ncov)) %>% 
+    bind_rows(ncov_gam_fit_boot@ests[1:2, "est"] %>% t() %>% 
+                  as.data.frame() %>% 
+                  rename(par1=shape, par2=scale) %>% 
+                  mutate(study="JHU-IDD",
+                         type="gamma",
+                         obs=nrow(ncov))) %>%
+    bind_rows(ncov_wei_fit_boot@ests[1:2, "est"] %>% t() %>% 
+                  as.data.frame() %>% 
+                  rename(par1=shape, par2=scale) %>% 
+                  mutate(study="JHU-IDD",
+                         type="weibull",
+                         obs=nrow(ncov))) %>% 
+    bind_rows(ncov_erl_fit@ests[1:2, "est"] %>% t() %>% 
+                  as.data.frame() %>% 
+                  rename(par1=shape, par2=scale) %>% 
+                  mutate(study="JHU-IDD",
+                         type="erlang",
+                         obs=nrow(ncov))) %>% 
+    bind_rows(backer_params) %>% 
+    select(study, type, obs, par1, par2) %>% 
+    mutate(par1=round(par1,2),
+           par2=round(par2,2))
+
+knitr::kable(param_est)
+```
+
 
 *(Qulu Zheng, Hannah Meredith, Kyra Grantz, Qifang Bi, Forrest Jones, and Stephen Lauer all contributed to this project)*

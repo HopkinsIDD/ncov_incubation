@@ -1,7 +1,7 @@
 Real-time estimation of the Wuhan coronavirus incubation time
 =============================================================
 
-Updated: Thu Jan 30 09:47:08 2020
+Updated: Thu Jan 30 13:01:11 2020
 
 Our lab has been collecting data (freely available at
 [`data/nCoV-IDD-traveler-data.csv`](https://github.com/HopkinsIDD/ncov_incubation/blob/master/data/nCoV-IDD-traveler-data.csv))
@@ -23,7 +23,8 @@ Quick links:
 -   [Incubation period estimates](#incubation-period-estimates)
 -   [Alternate estimates and sensitivity
     analyses](#alternate-estimates-and-sensitivity-analyses)
--   [Comparison to Backer](#comparison-to-backer)
+-   [Comparison to other estimates](#comparison-to-other-estimates)
+-   [Parameter estimates](#parameter-estimates)
 
 Data summary
 ------------
@@ -212,16 +213,16 @@ When we set the unknown ELs to 2018 December 1 instead of 2019 December
 the full data. Somewhat surprisingly, this changes the estimates less
 than either of the other alternate estimates.
 
-Comparison to Backer
---------------------
+Comparison to other estimates
+-----------------------------
 
 [Backer, Klinkenberg, &
 Wallinga](https://www.medrxiv.org/content/10.1101/2020.01.27.20018986v1.full.pdf+html)
 estimated the incubation period based on 34 early nCoV cases that
 traveled from Wuhan to other regions in China. [Li *et
 al*](https://www.nejm.org/doi/full/10.1056/NEJMoa2001316) estimated the
-incubation period based on the first 425 laboratory-confirmed cases in
-Wuhan. A comparison of our incubation periods are shown below:
+incubation period based on the 10 laboratory-confirmed cases in Wuhan. A
+comparison of our incubation periods are shown below:
 
 <img src="README_files/figure-markdown_strict/comparison-1.png" style="display: block; margin: auto;" />
 
@@ -229,6 +230,87 @@ The median estimates from all models lie between 4.14 and 5.61. The
 lower and upper tails for our distributions are all closer to the median
 than from the other studies, whether this is due to differences in data
 or in estimation methodologies is open for investigation.
+
+Parameter estimates
+-------------------
+
+For the convenience of researchers who need parameter estimates for
+making infectious disease models, we include a table of the parameter
+estimates from our analysis and inferred from the other analyses. The
+parameters are different for each distribution; par1 and par2 are
+log-mean and log-sd of the log-normal distribution, while they are the
+shape and scale parameters for the gamma, Weibull, and Erlang
+distributions.
+
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">study</th>
+<th style="text-align: center;">type</th>
+<th style="text-align: right;">obs</th>
+<th style="text-align: right;">par1</th>
+<th style="text-align: right;">par2</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">JHU-IDD</td>
+<td style="text-align: center;">log-normal</td>
+<td style="text-align: right;">101</td>
+<td style="text-align: right;">1.64</td>
+<td style="text-align: right;">0.36</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">JHU-IDD</td>
+<td style="text-align: center;">gamma</td>
+<td style="text-align: right;">101</td>
+<td style="text-align: right;">7.92</td>
+<td style="text-align: right;">0.69</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">JHU-IDD</td>
+<td style="text-align: center;">weibull</td>
+<td style="text-align: right;">101</td>
+<td style="text-align: right;">3.11</td>
+<td style="text-align: right;">6.11</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">JHU-IDD</td>
+<td style="text-align: center;">erlang</td>
+<td style="text-align: right;">101</td>
+<td style="text-align: right;">14.00</td>
+<td style="text-align: right;">0.40</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Backer 2020</td>
+<td style="text-align: center;">weibull</td>
+<td style="text-align: right;">34</td>
+<td style="text-align: right;">2.37</td>
+<td style="text-align: right;">6.54</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Backer 2020</td>
+<td style="text-align: center;">gamma</td>
+<td style="text-align: right;">34</td>
+<td style="text-align: right;">4.96</td>
+<td style="text-align: right;">1.15</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Backer 2020</td>
+<td style="text-align: center;">log-normal</td>
+<td style="text-align: right;">34</td>
+<td style="text-align: right;">1.63</td>
+<td style="text-align: right;">0.55</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Li 2020</td>
+<td style="text-align: center;">log-normal</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">1.42</td>
+<td style="text-align: right;">0.67</td>
+</tr>
+</tbody>
+</table>
 
 *(Qulu Zheng, Hannah Meredith, Kyra Grantz, Qifang Bi, Forrest Jones,
 and Stephen Lauer all contributed to this project)*

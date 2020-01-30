@@ -1,5 +1,5 @@
-﻿study,type,virus,par1,par2
-Backer 2020,weibull,nCoV,2.373476,6.543997
-Backer 2020,gamma,nCoV,4.96,1.15
-Backer 2020,log-normal,nCoV,1.63,0.55
-Li 2020,log-normal,nCoV,1.42,0.67
+﻿study,type,obs,par1,par2
+Backer 2020,weibull,34,2.373476,6.543997
+Backer 2020,gamma,34,4.96,1.15
+Backer 2020,log-normal,34,1.63,0.55
+Li 2020,log-normal,10,1.42,0.67
