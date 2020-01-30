@@ -325,19 +325,24 @@ The median age is about `r median((ncov$AGEL+ncov$AGER)/2, na.rm=T)` years (IQR:
 dat_sum <- ncov %>%
     mutate(ELnew = EL-ER,
            ERnew = ER-ER,
+           Emid = (ELnew + ERnew)/2,
            SLnew = SL-ER,
            SRnew = SR-ER,
+           Smid = (SLnew + SRnew)/2,
            UID=reorder(UID, SR-EL))
+
 
 ggplot(dat_sum, aes(y=factor(UID))) + 
     geom_segment(aes(x=ELnew, xend=ERnew, yend=factor(UID)), 
-                 color="blue", size=2, alpha=.25) +
+                 color="#0072B2", size=2, alpha=.25) +
     geom_segment(aes(x=SLnew, xend=SRnew, yend=factor(UID)), 
-                 size=2, color="red", alpha=.25) +
-    # facet_grid(WUHAN_RESIDENT~., space="free", scales="free") +
+                 size=2, color="#CC0000", alpha=.25) +
+    geom_point(aes(x=Emid, y=factor(UID)), size=0.5, color="#0072B2") +
+    geom_point(aes(x=Smid, y=factor(UID)), size=0.5, color="#CC0000") +
+    geom_segment(aes(x=Emid, xend=Smid, yend=factor(UID)), size=0.33, color="#999999") +
     ggtitle("Exposure and symptom onset windows") +
-    scale_x_continuous("Days since exposure (ER)") +
-    scale_y_discrete("UID") +
+    scale_x_continuous("Days since exposure") +
+    scale_y_discrete("Case") +
     theme_bw() +
     theme(axis.text.y = element_blank(),
           axis.ticks.y= element_blank(),
