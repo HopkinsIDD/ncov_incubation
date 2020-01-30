@@ -435,9 +435,9 @@ dic_lls <- tibble(dist=c("log-normal",
                        ncov_wei_fit_boot@loglik,
                        ncov_erl_fit@loglik))
 
-ncov_gam_fit_boot
-ncov_wei_fit_boot
-ncov_erl_fit
+# ncov_gam_fit_boot
+# ncov_wei_fit_boot
+# ncov_erl_fit
 ```
 
 The median estimates are very similar across parameterizations, while the Weibull distribution has a slightly smaller value at the 2.5th percentile and the log-normal distribution has a slightly larger value at the 97.5th percentile.
