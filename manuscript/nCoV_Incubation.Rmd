@@ -474,14 +474,15 @@ all_sens_plot <- ncov_inc_fit_boot@ests[-2, -4] %>%
     # select(-CIhigh, -CIlow) %>% 
     # spread(qtile, est, sep="_")
 
-ggplot(data=all_sens_plot,
-       aes(y=est, ymin=CIlow, ymax=CIhigh, x=as.factor(qtile), color=type)) +
+all_sens_plot <- ggplot(data=all_sens_plot,
+                        aes(y=est, ymin=CIlow, ymax=CIhigh, x=as.factor(qtile), color=type)) +
     geom_errorbar(height=0.2, position=position_dodge(0.9)) +
     geom_point(position=position_dodge(0.9)) +
     scale_y_continuous("Incubation time, in days (with 95% CIs)", limits=c(0,21)) +
     scale_x_discrete("Estimate quantile") +
     scale_color_manual("Est\ntype",
                        values=cbbPalette[c(1,6,4,7)]) +
+    ggtitle("A") +
     theme_bw() + coord_flip() +
     theme(axis.text=element_text(color="black"))
 ```
@@ -499,20 +500,14 @@ backer_comp <- ncov_inc_fit_boot@ests[-2, -4] %>%
            type="log-normal") %>% 
     bind_rows(ncov_gam_fit_boot@ests[-2, -4] %>%
                   as.data.frame() %>%
-                  # rename(est_fever=est, CIlow_fever=CIlow,
-                  #        CIhigh_fever=CIhigh) %>%
                   mutate(qtile=c("mean",2.5, 5, 25, 50, 75, 95, 97.5),
                          type="gamma")) %>%
     bind_rows(ncov_wei_fit_boot@ests[-2, -4] %>% 
                   as.data.frame() %>% 
-                  # rename(est_foreign=est, CIlow_foreign=CIlow,
-                  #        CIhigh_foreign=CIhigh) %>% 
                   mutate(qtile=c("mean",2.5, 5, 25, 50, 75, 95, 97.5),
                          type="weibull")) %>% 
     bind_rows(ncov_erl_fit@ests[-2, -4] %>%
                   as.data.frame() %>%
-                  # rename(est_year=est, CIlow_year=CIlow,
-                  #        CIhigh_year=CIhigh) %>%
                   mutate(qtile=c("mean",2.5, 5, 25, 50, 75, 95, 97.5),
                          type="erlang")) %>%
     mutate(est=ifelse(qtile=="mean", exp(est), est),
@@ -554,19 +549,21 @@ backer_comp <- ncov_inc_fit_boot@ests[-2, -4] %>%
                               ifelse(study=="Backer 2020", 2, 1)),
            study=reorder(study, study_order))
 
-ggplot(data=backer_comp,
-       aes(middle=qtile_50, ymin=qtile_2.5, ymax=qtile_97.5,
-           lower=qtile_25, upper=qtile_75, x=type,
-           fill=study)) +
+comparison_plot <- ggplot(data=backer_comp,
+                          aes(middle=qtile_50, ymin=qtile_2.5, ymax=qtile_97.5,
+                              lower=qtile_25, upper=qtile_75, x=type,
+                              fill=study)) +
     geom_boxplot(stat="identity",
                  position = position_dodge2(preserve = "single")) +
-    # geom_point(position=position_dodge(0.9)) +
     scale_y_continuous("Incubation time, in days",
                        limits=c(0,16)) +
     scale_x_discrete("Distribution") +
     scale_fill_manual("Study",
                       breaks=c("JHU-IDD", "Backer 2020", "Li 2020"),
                       values=cbbPalette[c(4,2,3)]) +
+    ggtitle("B") +
     theme_bw() + coord_flip() +
     theme(axis.text=element_text(color="black"))
+
+grid.arrange(all_sens_plot, comparison_plot)
 ```
