@@ -1,7 +1,7 @@
 Real-time estimation of the novel coronavirus incubation time
 =============================================================
 
-Updated: Thu Jan 30 14:31:29 2020
+Updated: Thu Jan 30 16:39:49 2020
 
 Our lab has been collecting data (freely available at
 [`data/nCoV-IDD-traveler-data.csv`](https://github.com/HopkinsIDD/ncov_incubation/blob/master/data/nCoV-IDD-traveler-data.csv))
