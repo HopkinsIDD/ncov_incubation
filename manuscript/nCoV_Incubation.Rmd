@@ -11,7 +11,17 @@ knitr::opts_chunk$set(echo=F, message=F, warning=F, eval=T,
                       fig.align='center',fig.pos='ht')
 ```
 
+## Data import
+
 Data freely available at [`data/nCoV-IDD-traveler-data.csv`](https://github.com/HopkinsIDD/ncov_incubation/blob/master/data/nCoV-IDD-traveler-data.csv)) 
+
+We use explicit dates and times when they are reported in the source documents, however when they are not available, we make the following assumptions:
+
+- For cases without a reported right-bound on symptom onset time (SR), we use the time that the case is first presented to a hospital or, lacking that, the time that the source document was published
+- For cases without an EL, we use 2019 December 1, which was the onset date for the first reported nCoV-2019 case; though we will test this assumption later
+- For cases without an ER, we use the SR
+- For cases without an SL, we use the EL
+
 
 ```{r load, include=FALSE}
 library(tidyverse)
@@ -25,118 +35,142 @@ set.seed(1)
 
 ## read in coronavirus data
 ncov_raw <- read_csv("data/nCoV-IDD-traveler-data.csv") %>% 
-    rename(EL_date=EL, ER_date=ER, SL_date=SL, SR_date=SR)
+            rename(EL_date=EL, ER_date=ER, SL_date=SL, SR_date=SR)
 
-## change dates to restrict exposure to after December 1
-## add times where missing
+## change dates to restrict exposure to after 1 December 2019
+## add other times where missing
 ncov_ELSR <- ncov_raw %>% 
-    # if EL is missing or before 1 Dec 2019, use 1 Dec 2019
-    mutate(EL_date=ifelse(is.na(EL_date),"2019-12-01 00:00:00", EL_date) %>% 
-               ymd_hms() %>% 
-               if_else(. < ymd_hms("2019-12-01 00:00:00"),
-                       ymd_hms("2019-12-01 00:00:00"), .),
-           # if SR is missing, use PR
-           SR_date=ifelse(ymd_hms(SR_date) %>% is.na,
-                          PR, SR_date) %>% 
-               ymd_hms(),
+             # if EL is missing or before 1 Dec 2019, use 1 Dec 2019
+             mutate(EL_date=ifelse(is.na(EL_date),"2019-12-01 00:00:00", EL_date) %>% 
+                            ymd_hms() %>% 
+                            if_else(. < ymd_hms("2019-12-01 00:00:00"), ymd_hms("2019-12-01 00:00:00"), .),
+             # if SR is missing, use PR
+                    SR_date=ifelse(ymd_hms(SR_date) %>% is.na, PR, SR_date) %>% 
+                            ymd_hms(),
            # SR_fever is only for cases with confirmed fever dates
-           SR_fever=ymd_hms(SR_fever))
+                    SR_fever=ymd_hms(SR_fever))
 
 ncov <- ncov_ELSR %>% 
     # if ER is missing, use SR; if SL is missing, use EL
-    mutate(ER_date=if_else(is.na(ER_date), SR_date, ymd_hms(ER_date)),
-           SL_date=if_else(is.na(SL_date), EL_date, ymd_hms(SL_date)),
-           SL_fever= if_else(is.na(SL_fever) & !is.na(SR_fever), 
-                             SL_date,
-                             ymd_hms(SL_fever))) %>% 
+        mutate(ER_date=if_else(is.na(ER_date), SR_date, ymd_hms(ER_date)),
+               SL_date=if_else(is.na(SL_date), EL_date, ymd_hms(SL_date)),
+               SL_fever= if_else(is.na(SL_fever) & !is.na(SR_fever), SL_date, ymd_hms(SL_fever))) %>% 
     # calculate days since 1 Dec 2019
-    mutate(EL=difftime(EL_date, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
-               as.numeric(),
-           ER=difftime(ER_date, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
-               as.numeric(),
-           SL=difftime(SL_date, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
-               as.numeric(),
-           SR=difftime(SR_date, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
-               as.numeric(),
-           SL_fever=difftime(SL_fever,
-                             ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
-               as.numeric(),
-           SR_fever=difftime(SR_fever,
-                             ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
-               as.numeric(),
-           PL=difftime(PL, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
-               as.numeric(),
-           PR=difftime(PR, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
-               as.numeric(),
-           E_int=ER-EL,
-           S_int=SR-SL,
-           S_fever_int=SR_fever-SL_fever) %>% 
+        mutate(EL=difftime(EL_date, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+                  as.numeric(),
+               ER=difftime(ER_date, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+                   as.numeric(),
+               SL=difftime(SL_date, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+                   as.numeric(),
+               SR=difftime(SR_date, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+                   as.numeric(),
+               SL_fever=difftime(SL_fever, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+                   as.numeric(),
+               SR_fever=difftime(SR_fever, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+                   as.numeric(),
+              PL=difftime(PL, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+                  as.numeric(),
+              PR=difftime(PR, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+                  as.numeric(),
+              E_int=ER-EL,
+              S_int=SR-SL,
+              S_fever_int=SR_fever-SL_fever) %>% 
     # remove any entries missing EL, ER, SL, or SR
-    filter(!is.na(EL_date), !is.na(ER_date), !is.na(SL_date), !is.na(SR_date)) %>% 
+        filter(!is.na(EL_date), !is.na(ER_date), !is.na(SL_date), !is.na(SR_date)) %>% 
     # remove entries that haven't been reviewed by two people
-    filter(!is.na(REVIEWER2)) %>% 
+        filter(!is.na(REVIEWER2)) %>% 
     # remove entries with exposure/onset intervals less than 0
     # remove entries where ER greater than SR or EL greater than SL
-    filter(E_int > 0, S_int > 0, ER<=SR, SL>=EL)
+        filter(E_int > 0, S_int > 0, ER<=SR, SL>=EL)
 
 ## Now lets divide data sets by observation type
 ## only fevers
-ncov_fever <- ncov %>% 
-    filter(!is.na(SL_fever) | !is.na(SR_fever))
+ncov_fever <- ncov %>% filter(!is.na(SL_fever) | !is.na(SR_fever))
 
 ## only travel outside of China
-ncov_foreign <- ncov %>% 
-    filter(COUNTRY.DEST != "China" | PROVINCE.DEST %in% c("HongKong", "Macau"))
+ncov_foreign <- ncov %>% filter(COUNTRY.DEST != "China" | PROVINCE.DEST %in% c("HongKong", "Macau"))
 
 ## only fevers outside of China
-ncov_foreign_fever <- ncov_foreign %>% 
-    filter(!is.na(SL_fever) | !is.na(SR_fever))
+ncov_foreign_fever <- ncov_foreign %>% filter(!is.na(SL_fever) | !is.na(SR_fever))
 ```
 
 ## Data summary
 
-The necessary components for estimating the incubation period are left and right bounds for the exposure (EL and ER) and symptom onset times (SE and SR) for each case.
-We use explicit dates and times when they are reported in the source documents, however when they are not available, we make the following assumptions:
 
-- For cases without a reported right-bound on symptom onset time (SR), we use the time that the case is first presented to a hospital or, lacking that, the time that the source document was published
-- For cases without an EL, we use 2019 December 1, which was the onset date for the first reported nCoV-2019 case; though we will test this assumption later
-- For cases without an ER, we use the SR
-- For cases without an SL, we use the EL
+```{r data-summary, echo=FALSE, message=FALSE, warning=FALSE}
 
-```{r data-summary, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="This figure displays the exposure and symptom onset windows for each case in our dataset, relative to the right-bound of the exposure window (ER). The blue bars indicate the the exposure windows and the red bars indicate the symptom onset windows for each case. Purple areas are where those two bars overlap."}
+## sex distribution
+table(ncov$SEX)
+table(ncov$SEX) / nrow(ncov)
+sum(is.na(ncov$SEX))
+
+## age distribution
+ncov$age.mid <- (ncov$AGEL + ncov$AGER)/2
+summary(ncov$age.mid)
+
+## mainland China vs non mainland
+ncov <- ncov %>% 
+        mutate(mlChina=ifelse(COUNTRY.DEST=="China" & !PROVINCE.DEST%in%c("HongKong", "Macau"),1,0))
+
+## Regions within mainland China
+ncov %>% filter(mlChina==1) %>% group_by(PROVINCE.DEST) %>% summarise(ncases=n()) %>% arrange(desc(ncases))
+
+## Countries + regions outside of mainland China
+ncov %>% filter(mlChina==0) %>% group_by(COUNTRY.DEST) %>% summarise(ncases=n()) %>% arrange(desc(ncases))
+ncov %>% filter(mlChina==0 & COUNTRY.DEST=="China") %>% group_by(PROVINCE.DEST) %>% summarise(ncases=n()) %>% arrange(desc(ncases))
+
+## Wuhan exposure
+ncov$WUHAN_EXP <- if_else(ncov$WUHAN_RESIDENT%in%c("Yes", "Hubei") | ncov$WUHAN_VISITED=="Yes", 1, 0) 
+table(ncov$WUHAN_EXP)
+prop.table(table(ncov$SEX))
+sum(is.na(ncov$SEX))
+
+## Median time from symptom onset to hospitalization
+ncov %>% mutate(Smid = (SL + SR)/2,
+                Pmid = (PL + PR)/2,
+                thosp = Pmid - Smid) %>% select(thosp) %>% summary
+
+## Median exposure interval
+summary(ncov$E_int)
+summary(ncov$S_int)
+
+```
+
+```{r figure-1, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="This figure displays the exposure and symptom onset windows for each case in our dataset, relative to the right-bound of the exposure window (ER). The blue bars indicate the the exposure windows and the red bars indicate the symptom onset windows for each case. Purple areas are where those two bars overlap."}
 dat_sum <- ncov %>%
     mutate(ELnew = EL-ER,
            ERnew = ER-ER,
+           Emid = (ELnew + ERnew)/2,
            SLnew = SL-ER,
            SRnew = SR-ER,
+           Smid = (SLnew + SRnew)/2,
            UID=reorder(UID, SR-EL))
 
 ggplot(dat_sum, aes(y=factor(UID))) + 
     geom_segment(aes(x=ELnew, xend=ERnew, yend=factor(UID)), 
-                 color="blue", size=2, alpha=.25) +
+                 color="#0072B2", size=2, alpha=.25) +
     geom_segment(aes(x=SLnew, xend=SRnew, yend=factor(UID)), 
-                 size=2, color="red", alpha=.25) +
-    # facet_grid(WUHAN_RESIDENT~., space="free", scales="free") +
+                 size=2, color="#CC0000", alpha=.25) +
+    geom_point(aes(x=Emid, y=factor(UID)), size=0.5, color="#0072B2") +
+    geom_point(aes(x=Smid, y=factor(UID)), size=0.5, color="#CC0000") +
+    #geom_segment(aes(x=Emid, xend=Smid, yend=factor(UID)), size=0.33) +
     ggtitle("Exposure and symptom onset windows") +
-    scale_x_continuous("Days since exposure (ER)") +
-    scale_y_discrete("UID") +
+    scale_x_continuous("Days since exposure") +
+    scale_y_discrete("Case") +
     theme_bw() +
     theme(axis.text.y = element_blank(),
           axis.ticks.y= element_blank(),
           axis.text.x=element_text(color="black"))
 ```
 
-```{r fill-in-values}
-## number of regions
-num_reg <- ((ncov$COUNTRY.DEST[ncov$COUNTRY.DEST!="China"]) %>%
-                unique() %>% length()) +
-    ((ncov$PROVINCE.DEST[ncov$COUNTRY.DEST=="China"]) %>% unique() %>% length())
-```
 
 
 ## Incubation period estimates
 
 We estimate the incubation period using the coarseDataTools package based on the paper by [Reich *et al*, 2009](https://onlinelibrary.wiley.com/doi/pdf/10.1002/sim.3659).
+
+
+### Log normal incubation period
 We assume a log-normal incubation period and using a bootstrap method for calculating confidence intervals.
 
 The first model we fit is to all of the data and output the median, 2.5th, and 97.5th quantiles (and their confidence intervals):
