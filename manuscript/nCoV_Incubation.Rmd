@@ -1,6 +1,6 @@
 ---
 title: "Estimating incubation period of novel coronavirus 2019 in Wuhan, China"
-output: md_document
+output: pdf_document
 editor_options: 
   chunk_output_type: console
 ---
@@ -28,14 +28,15 @@ library(tidyverse)
 library(lubridate)
 library(coarseDataTools)
 library(gridExtra)
-# devtools::install_github("reichlab/activemonitr")
+library(ggpubr)
+# devtools::install_github("salauer/activemonitr")
 library(activeMonitr)
 cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
 set.seed(1)
 
 ## read in coronavirus data
-ncov_raw <- read_csv("data/nCoV-IDD-traveler-data.csv") %>% 
+ncov_raw <- read_csv("data/nCoV-IDD-traveler-data-manuscript.csv") %>% 
             rename(EL_date=EL, ER_date=ER, SL_date=SL, SR_date=SR)
 
 ## change dates to restrict exposure to after 1 December 2019
@@ -419,13 +420,13 @@ all_est_plot <- ncov_inc_fit_boot@ests[-2, -4] %>%
                   # rename(est_foreign=est, CIlow_foreign=CIlow,
                   #        CIhigh_foreign=CIhigh) %>% 
                   mutate(qtile=c("mean", 2.5, 5, 25, 50, 75, 95, 97.5),
-                         type="weibull")) %>% 
+                         type="Weibull")) %>% 
     bind_rows(ncov_erl_fit@ests[-2, -4] %>% 
                   as.data.frame() %>% 
                   # rename(est_year=est, CIlow_year=CIlow,
                   #        CIhigh_year=CIhigh) %>% 
                   mutate(qtile=c("mean", 2.5, 5, 25, 50, 75, 95, 97.5),
-                         type="erlang")) %>% 
+                         type="Erlang")) %>% 
     mutate(est=ifelse(qtile=="mean", exp(est), est),
            CIlow=ifelse(qtile=="mean", exp(CIlow), CIlow),
            CIhigh=ifelse(qtile=="mean", exp(CIhigh), CIhigh),
@@ -475,8 +476,8 @@ Since the winter often brings cold air and other pathogens that can cause sore t
 Since a plurality of our cases came from mainland China, where assumptions about local transmission may be less firm, we ran an analysis without those cases.
 Finally, we challenge our assumption that unknown ELs can be assumed to be 2019 December 1 ([Nextstrain estimates that it could have happened as early as September](https://nextstrain.org/ncov?dmax=2019-12-04&m=num_date)), by setting unknown ELs to 2018 December 1.
 
-```{r all-sens-plot, warning=F, message=F}
-all_sens_plot <- ncov_inc_fit_boot@ests[-2, -4] %>% 
+```{r all-sens-plot, warning=F, message=F, eval=F}
+all_sens_dat <- ncov_inc_fit_boot@ests[-2, -4] %>% 
     as.data.frame() %>% 
     mutate(qtile=c("mean", 2.5, 5, 25, 50, 75, 95, 97.5),
            type="all") %>% 
@@ -508,7 +509,7 @@ all_sens_plot <- ncov_inc_fit_boot@ests[-2, -4] %>%
     # select(-CIhigh, -CIlow) %>% 
     # spread(qtile, est, sep="_")
 
-all_sens_plot <- ggplot(data=all_sens_plot,
+all_sens_plot <- ggplot(data=all_sens_dat,
                         aes(y=est, ymin=CIlow, ymax=CIhigh, x=as.factor(qtile), color=type)) +
     geom_errorbar(height=0.2, position=position_dodge(0.9)) +
     geom_point(position=position_dodge(0.9)) +
@@ -516,7 +517,6 @@ all_sens_plot <- ggplot(data=all_sens_plot,
     scale_x_discrete("Estimate quantile") +
     scale_color_manual("Est\ntype",
                        values=cbbPalette[c(1,6,4,7)]) +
-    ggtitle("A") +
     theme_bw() + coord_flip() +
     theme(axis.text=element_text(color="black"))
 ```
@@ -539,11 +539,11 @@ backer_comp <- ncov_inc_fit_boot@ests[-2, -4] %>%
     bind_rows(ncov_wei_fit_boot@ests[-2, -4] %>% 
                   as.data.frame() %>% 
                   mutate(qtile=c("mean",2.5, 5, 25, 50, 75, 95, 97.5),
-                         type="weibull")) %>% 
+                         type="Weibull")) %>% 
     bind_rows(ncov_erl_fit@ests[-2, -4] %>%
                   as.data.frame() %>%
                   mutate(qtile=c("mean",2.5, 5, 25, 50, 75, 95, 97.5),
-                         type="erlang")) %>%
+                         type="Erlang")) %>%
     mutate(est=ifelse(qtile=="mean", exp(est), est),
            CIlow=ifelse(qtile=="mean",exp(CIlow), CIlow),
            CIhigh=ifelse(qtile=="mean",exp(CIhigh), CIhigh),
@@ -553,27 +553,27 @@ backer_comp <- ncov_inc_fit_boot@ests[-2, -4] %>%
     select(-CIhigh, -CIlow) %>%
     spread(qtile, est, sep="_") %>%
     bind_rows(backer_params %>% 
-                  mutate(`qtile_2.5`=ifelse(type=="weibull",
+                  mutate(`qtile_2.5`=ifelse(type=="Weibull",
                                           qweibull(.025, par1, par2),
                                           ifelse(type=="gamma",
                                                  qgamma(.025, par1, scale=par2),
                                                  qlnorm(.025, par1, par2))),
-                         qtile_25=ifelse(type=="weibull",
+                         qtile_25=ifelse(type=="Weibull",
                                           qweibull(.25, par1, par2),
                                           ifelse(type=="gamma",
                                                  qgamma(.25, par1, scale=par2),
                                                  qlnorm(.25, par1, par2))),
-                         qtile_50=ifelse(type=="weibull",
+                         qtile_50=ifelse(type=="Weibull",
                                           qweibull(.5, par1, par2),
                                           ifelse(type=="gamma",
                                                  qgamma(.5, par1, scale=par2),
                                                  qlnorm(.5, par1, par2))),
-                         qtile_75=ifelse(type=="weibull",
+                         qtile_75=ifelse(type=="Weibull",
                                           qweibull(.75, par1, par2),
                                           ifelse(type=="gamma",
                                                  qgamma(.75, par1, scale=par2),
                                                  qlnorm(.75, par1, par2))),
-                         `qtile_97.5`=ifelse(type=="weibull",
+                         `qtile_97.5`=ifelse(type=="Weibull",
                                           qweibull(.975, par1, par2),
                                           ifelse(type=="gamma",
                                                  qgamma(.975, par1, scale=par2),
@@ -583,7 +583,7 @@ backer_comp <- ncov_inc_fit_boot@ests[-2, -4] %>%
                               ifelse(study=="Backer 2020", 2, 1)),
            study=reorder(study, study_order))
 
-comparison_plot <- ggplot(data=backer_comp,
+ggplot(data=backer_comp,
                           aes(middle=qtile_50, ymin=qtile_2.5, ymax=qtile_97.5,
                               lower=qtile_25, upper=qtile_75, x=type,
                               fill=study)) +
@@ -595,14 +595,16 @@ comparison_plot <- ggplot(data=backer_comp,
     scale_fill_manual("Study",
                       breaks=c("JHU-IDD", "Backer 2020", "Li 2020"),
                       values=cbbPalette[c(4,2,3)]) +
-    ggtitle("B") +
+    # ggtitle("B") +
     theme_bw() + coord_flip() +
     theme(axis.text=element_text(color="black"))
 
-grid.arrange(all_sens_plot, comparison_plot)
+# grid.arrange(all_sens_plot, comparison_plot, layout_matrix=cbind(c(1), c(2)))
 ```
 
-```{r missed-cases}
+```{r missed-cases, fig.height=7}
+# saveRDS(ncov_gam_fit_boot, "generated-data/gam-fit-boot.rds")
+# ncov_gam_fit_boot <- readRDS("generated-data/gam-fit-boot.rds")
 ## Figure 1
 ## plot with x-axis in days, y axis as cases missed per XX monitored 
 ## (similar to fig 3 of activemonitr manuscript)
@@ -614,8 +616,8 @@ ncov_gamma_dat <- tibble(shape=ncov_gam_fit_boot@samples$par1,
            p95=qgamma(0.95, shape=shape, scale=scale),
            chain=1)
 
-phis <- c(1/100, 1/1000, 1/10000)
-durs <- 1:25
+phis <- c(1, 1/100, 1/1000, 1/10000)
+durs <- 0:25
 yrange <- c(1e-18, 1e-2)
 
 ## determine max u for each disease such that max(u)/2 + m = 90th percentile of T
@@ -624,41 +626,74 @@ tmp_ncov <- mean(qgamma(.90, shape=ncov_gamma_dat$shape,
 maxu_ncov <- 2*(tmp_ncov - mean(ncov_gamma_dat$median))
 
 ## make plots/data
-ncov_monitor_probs <- plot_risk_uncertainty(ncov_gamma_dat,# phi=phis, 
+ncov_monitor_probs <- plot_risk_uncertainty(ncov_gamma_dat, phi=phis, 
+                                            long_tail_pct=0.99,
+                                            nreps=1e3,
                                             max_u = maxu_ncov,
                                             durations=durs, 
                                             return_plot=FALSE,
                                             return_data=TRUE,
-                                            include_xlab = FALSE, yrange=yrange, 
+                                            include_xlab = FALSE,
+                                            yrange=yrange, 
                                             include_legend=FALSE)
 
 ncov_monitor_cases <- ncov_monitor_probs$data %>% 
     mutate(
-        escaped_cases_per_1k_p05 = p05 * 1000,
-        escaped_cases_per_1k_p25 = p25 * 1000,
-        escaped_cases_per_1k_p50 = p50 * 1000,
-        escaped_cases_per_1k_p75 = p75 * 1000,
-        escaped_cases_per_1k_p95 = p95 * 1000,
+        escaped_cases_per_1k_p05 = (p05 * 10000),
+        escaped_cases_per_1k_p25 = (p25 * 10000),
+        escaped_cases_per_1k_p50 = (p50 * 10000),
+        escaped_cases_per_1k_p75 = (p75 * 10000),
+        escaped_cases_per_1k_p95 = (p95 * 10000),
         risk_group = factor(phi, levels=phis,
-                            labels=c("high risk (1 in 100)",
-                                     "some risk (1 in 1,000)",
-                                     "low risk (1 in 10,000)"))
+                            labels=c("Infected (1 in 1)",
+                                     "High risk (1 in 100)",
+                                     "Some risk (1 in 1,000)",
+                                     "Low risk (1 in 10,000)"))
     )
 
-ggplot(ncov_monitor_cases,
-       aes(x=d, y=escaped_cases_per_1k_p50, color=risk_group,
+am_plot_dat <- ncov_monitor_cases %>% 
+    mutate(escaped_cases_per_1k_p05 = ifelse(escaped_cases_per_1k_p05>100,
+                                             NA,escaped_cases_per_1k_p05),
+           escaped_cases_per_1k_p50 = ifelse(escaped_cases_per_1k_p50>100,
+                                             NA,escaped_cases_per_1k_p50),
+           escaped_cases_per_1k_p95 = ifelse(escaped_cases_per_1k_p95>100,
+                                             NA,escaped_cases_per_1k_p95),)
+
+am_plot <- ggplot(ncov_monitor_cases,
+       aes(x=d, y=escaped_cases_per_1k_p50 %>% round, color=risk_group,
            group=risk_group, fill=risk_group)) +
     # geom_ribbon(aes(ymin=escaped_cases_per_1k_p25,
                     # ymax=escaped_cases_per_1k_p75), alpha=.5) +
-    geom_ribbon(aes(ymin=escaped_cases_per_1k_p05,
-                    ymax=escaped_cases_per_1k_p95), alpha=.25) +
+    geom_ribbon(aes(ymin=escaped_cases_per_1k_p05 %>% round,
+                    ymax=escaped_cases_per_1k_p95 %>% round), alpha=.25) +
     geom_line(size=2) +
-    ylab("expected cases missed per 1,000 monitored") +
-    xlab("duration of monitoring (days)") +
-    scale_color_brewer(type="qual") + 
-    scale_fill_brewer(type="qual") + 
+    ylab("Expected cases missed\nper 10,000 monitored") +
+    xlab("Duration of monitoring (days)") +
+    scale_color_brewer("Risk group", type="qual") + 
+    scale_fill_brewer("Risk group", type="qual") + 
     theme_bw() +
-    # scale_y_log10()+
-    theme(legend.position = c(.8,.8), legend.justification = c(1,1))
+    scale_y_sqrt(breaks=c(1,10,25,50,75,100))+
+    coord_cartesian(ylim=c(0,100)) +
+    theme(legend.position = c(.95,.9), legend.justification = c(1,1),
+          axis.text=element_text(color="black"))
+
+
+am_tbl_dat <- ncov_monitor_cases %>% 
+    mutate(risk_group=reorder(risk_group, phi, mean)) %>% 
+    filter(d %in% c(5, 10, 15, 20)) %>% 
+    transmute(Duration=d,
+              risk_group=risk_group,
+              est=paste0(escaped_cases_per_1k_p50 %>% round(),
+                         " (", escaped_cases_per_1k_p05 %>% round(),
+                         ", ", escaped_cases_per_1k_p95 %>% round(), ")")) %>% 
+    spread(risk_group, est)
+
+colnames(am_tbl_dat) <- gsub("\\(", "\n\\(", colnames(am_tbl_dat))
+# window_tbl <- tableGrob(window_tbl_dat[-1,], theme=ttheme_minimal())
+am_tbl <- ggtexttable(am_tbl_dat,
+                      theme=ttheme("classic", padding=unit(c(8,8), "mm")),
+                      rows=rep("", nrow(am_tbl_dat)))
+# grid.arrange(window_fig, window_tbl, nrow=2)
+ggarrange(am_plot, am_tbl, nrow=2)
 ```
 
