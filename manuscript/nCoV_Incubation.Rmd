@@ -133,7 +133,8 @@ sum(is.na(ncov$SEX))
 ## Median time from symptom onset to hospitalization
 ncov %>% mutate(Smid = (SL + SR)/2,
                 Pmid = (PL + PR)/2,
-                thosp = Pmid - Smid) %>% select(thosp) %>% summary
+                thosp = Pmid - Smid) %>%
+    filter(thosp>=0) %>% select(thosp) %>% summary
 
 ## Median exposure interval
 summary(ncov$E_int)
@@ -299,7 +300,7 @@ ncov_mainland_fit_boot <- dic.fit(ncov_mainland_dic,dist="L", n.boots=1000,
 
 ```
 
-```{r mainland-dic-plots, eval=F}
+```{r mainland-dic-plots, eval=T}
 ## plot the boot fit and table of intervals
 plot(ncov_mainland_fit_boot, main="non-mainland results")
 
@@ -491,12 +492,12 @@ all_sens_plot <- ncov_inc_fit_boot@ests[-2, -4] %>%
                   #        CIhigh_foreign=CIhigh) %>% 
                   mutate(qtile=c("mean", 2.5, 5, 25, 50, 75, 95, 97.5),
                          type="non-mainland")) %>% 
-    bind_rows(ncov_year_fit_boot@ests[-2, -4] %>% 
+    bind_rows(ncov_mainland_fit_boot@ests[-2, -4] %>% 
                   as.data.frame() %>% 
                   # rename(est_year=est, CIlow_year=CIlow,
                   #        CIhigh_year=CIhigh) %>% 
                   mutate(qtile=c("mean", 2.5, 5, 25, 50, 75, 95, 97.5),
-                         type="EL-2018")) %>% 
+                         type="mainland")) %>% 
     mutate(est=ifelse(qtile=="mean", exp(est), est),
            CIlow=ifelse(qtile=="mean", exp(CIlow), CIlow),
            CIhigh=ifelse(qtile=="mean", exp(CIhigh), CIhigh),
@@ -634,7 +635,9 @@ ncov_monitor_probs <- plot_risk_uncertainty(ncov_gamma_dat,# phi=phis,
 ncov_monitor_cases <- ncov_monitor_probs$data %>% 
     mutate(
         escaped_cases_per_1k_p05 = p05 * 1000,
+        escaped_cases_per_1k_p25 = p25 * 1000,
         escaped_cases_per_1k_p50 = p50 * 1000,
+        escaped_cases_per_1k_p75 = p75 * 1000,
         escaped_cases_per_1k_p95 = p95 * 1000,
         risk_group = factor(phi, levels=phis,
                             labels=c("high risk (1 in 100)",
@@ -645,8 +648,10 @@ ncov_monitor_cases <- ncov_monitor_probs$data %>%
 ggplot(ncov_monitor_cases,
        aes(x=d, y=escaped_cases_per_1k_p50, color=risk_group,
            group=risk_group, fill=risk_group)) +
+    # geom_ribbon(aes(ymin=escaped_cases_per_1k_p25,
+                    # ymax=escaped_cases_per_1k_p75), alpha=.5) +
     geom_ribbon(aes(ymin=escaped_cases_per_1k_p05,
-                    ymax=escaped_cases_per_1k_p95), alpha=.5) +
+                    ymax=escaped_cases_per_1k_p95), alpha=.25) +
     geom_line(size=2) +
     ylab("expected cases missed per 1,000 monitored") +
     xlab("duration of monitoring (days)") +
