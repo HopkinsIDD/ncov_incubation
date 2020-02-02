@@ -642,17 +642,17 @@ exp_miss_inf <- function(dic_preds,
 
 dic_params <- ncov_inc_fit_boot@samples
 phis <- c(1, 1/100, 1/1000, 1/10000)
-durs <- 1:25
+durs <- 1:28
 # yrange <- c(1e-18, 1e-2)
 
 ## determine max u for each disease such that max(u)/2 + m = 90th percentile of T
 # tmp_ncov <- mean(qgamma(.90, shape=ncov_gamma_dat$shape,
 #                         scale=ncov_gamma_dat$scale))
 # maxu_ncov <- 2*(tmp_ncov - mean(ncov_gamma_dat$median))
-tmp_ncov <- mean(qlnorm(.90, ncov_inc_fit_boot@samples$par1,
-                        ncov_inc_fit_boot@samples$par2))
-maxu_ncov <- 2*(tmp_ncov - mean(qlnorm(.50, ncov_inc_fit_boot@samples$par1,
-                        ncov_inc_fit_boot@samples$par2)))
+# tmp_ncov <- mean(qlnorm(.90, ncov_inc_fit_boot@samples$par1,
+#                         ncov_inc_fit_boot@samples$par2))
+# maxu_ncov <- 2*(tmp_ncov - mean(qlnorm(.50, ncov_inc_fit_boot@samples$par1,
+#                         ncov_inc_fit_boot@samples$par2)))
 
 emi_dat <- exp_miss_inf(dic_params, phis, durs) %>% #, ncov_inc_fit_boot@ests["p50", "est"]) %>% 
     group_by(phi, d) %>% 
@@ -728,7 +728,7 @@ am_plot <- ggplot(emi_dat,
 
 am_tbl_dat <- emi_dat %>% 
     mutate(risk_group=reorder(risk_group, phi, mean)) %>%
-    filter(d %in% c(7, 14, 21)) %>% 
+    filter(d %in% c(7, 14, 21, 28)) %>% 
     transmute(`Monitoring\nduration`=reorder(paste(d, "days"),d),
               risk_group=risk_group,
               est=paste0(escaped_cases_per_1k_mean %>%
@@ -747,6 +747,6 @@ am_tbl <- ggtexttable(am_tbl_dat,
 ggarrange(#am_plot,
           am_tbl, nrow=1,
           labels=c("Mean estimated symptomatic infections missed\n           per 10,000 monitored (99th percentile)"),
-          font.label=list(size=13, face="bold"), hjust=-0.3, vjust=6)
+          font.label=list(size=13, face="bold"), hjust=-0.35, vjust=5.5)
 ```
 
