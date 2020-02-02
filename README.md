@@ -1,7 +1,9 @@
+[![DOI](https://zenodo.org/badge/216109073.svg)](https://zenodo.org/badge/latestdoi/216109073)
+
 Real-time estimation of the novel coronavirus incubation time
 =============================================================
 
-Updated: Thu Jan 30 16:39:49 2020
+Updated: Sun Feb 2 14:32:53 2020
 
 Our lab has been collecting data (freely available at
 [`data/nCoV-IDD-traveler-data.csv`](https://github.com/HopkinsIDD/ncov_incubation/blob/master/data/nCoV-IDD-traveler-data.csv))
@@ -43,6 +45,11 @@ case in our dataset, relative to the right-bound of the exposure window
 indicate the symptom onset windows for each case. Purple areas are where
 those two bars overlap.
 </p>
+
+The bars where the exposure and symptom onset windows completely overlap
+are frequently travelers from Wuhan who were symptomatic on arrival to
+another country, that did not release further details. These cases could
+have been exposed or symptomatic at any point prior to their trip
 
 Exposure and symptom onset windows
 ----------------------------------
@@ -226,7 +233,7 @@ comparison of our incubation periods are shown below:
 
 <img src="README_files/figure-markdown_strict/comparison-1.png" style="display: block; margin: auto;" />
 
-The median estimates from all models lie between 4.14 and 5.61. The
+The median estimates from all models lie between 4.14 and 10.73. The
 lower and upper tails for our distributions are all closer to the median
 than from the other studies, whether this is due to differences in data
 or in estimation methodologies is open for investigation.
@@ -283,7 +290,7 @@ distributions.
 </tr>
 <tr class="odd">
 <td style="text-align: left;">Backer 2020</td>
-<td style="text-align: center;">weibull</td>
+<td style="text-align: center;">Weibull</td>
 <td style="text-align: right;">34</td>
 <td style="text-align: right;">2.37</td>
 <td style="text-align: right;">6.54</td>
