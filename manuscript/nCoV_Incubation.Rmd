@@ -301,7 +301,7 @@ ncov_mainland_fit_boot <- dic.fit(ncov_mainland_dic,dist="L", n.boots=1000,
 
 ```
 
-```{r mainland-dic-plots, eval=T}
+```{r mainland-dic-plots, eval=F}
 ## plot the boot fit and table of intervals
 plot(ncov_mainland_fit_boot, main="non-mainland results")
 
@@ -393,7 +393,8 @@ points(y=rep(0.5,2), x=c(ncov_inc_fit_boot@ests['p50','CIlow'], ncov_inc_fit_boo
 points(y=rep(0.975,2), x=c(ncov_inc_fit_boot@ests['p97.5','CIlow'], ncov_inc_fit_boot@ests['p97.5','CIhigh']), type='l', col=ci.col, lwd=2.5)
 
 knitr::kable(ncov_inc_fit_boot@ests[,-4])
-
+exp_val <- exp(ncov_inc_fit_boot@ests["meanlog", "est"]+0.5*(ncov_inc_fit_boot@ests["sdlog", "est"])^2)
+print(paste("The estimated mean is", exp_val))
 ```
 
 
@@ -603,97 +604,149 @@ ggplot(data=backer_comp,
 ```
 
 ```{r missed-cases, fig.height=7}
+# saveRDS(ncov_inc_fit_boot, "generated-data/ln-fit-boot.rds")
+ncov_inc_fit_boot <- readRDS("generated-data/ln-fit-boot.rds")
+
 # saveRDS(ncov_gam_fit_boot, "generated-data/gam-fit-boot.rds")
 # ncov_gam_fit_boot <- readRDS("generated-data/gam-fit-boot.rds")
 ## Figure 1
 ## plot with x-axis in days, y axis as cases missed per XX monitored 
 ## (similar to fig 3 of activemonitr manuscript)
 
-ncov_gamma_dat <- tibble(shape=ncov_gam_fit_boot@samples$par1,
-                         scale=ncov_gam_fit_boot@samples$par2,
-                         idx=seq(nrow(ncov_gam_fit_boot@samples))) %>% 
-    mutate(median=qgamma(0.5, shape=shape, scale=scale),
-           p95=qgamma(0.95, shape=shape, scale=scale),
-           chain=1)
+exp_miss_inf <- function(dic_preds,
+                         phis,
+                         durations,
+                         max_u=NULL){
+    if(!is.null(max_u)){
+        # u <- qunif(seq(0,1,.01),0,max_u)
+        u <- qexp(seq(0,0.99,.01), -log(1-0.99)/max_u)
+    } else u <- 0
+    dic_preds$idx <- seq(nrow(dic_preds))
+    return(crossing(idx=dic_preds$idx,
+                    phi=phis,
+                    d=durations,
+                    u) %>% 
+        left_join(dic_preds, by="idx") %>% 
+        mutate(p=plnorm(d+u, par1, par2, lower.tail=F)*phi,
+               emi_per_10k=1e4*p)) %>% 
+        group_by(idx, phi, d, par1, par2) %>% 
+        summarize(p=mean(p))
+}
 
+# ncov_gamma_dat <- tibble(shape=ncov_gam_fit_boot@samples$par1,
+#                          scale=ncov_gam_fit_boot@samples$par2,
+#                          idx=seq(nrow(ncov_gam_fit_boot@samples))) %>% 
+#     mutate(median=qgamma(0.5, shape=shape, scale=scale),
+#            p95=qgamma(0.95, shape=shape, scale=scale),
+#            chain=1)
+
+dic_params <- ncov_inc_fit_boot@samples
 phis <- c(1, 1/100, 1/1000, 1/10000)
-durs <- 0:25
-yrange <- c(1e-18, 1e-2)
+durs <- 1:25
+# yrange <- c(1e-18, 1e-2)
 
 ## determine max u for each disease such that max(u)/2 + m = 90th percentile of T
-tmp_ncov <- mean(qgamma(.90, shape=ncov_gamma_dat$shape, 
-                        scale=ncov_gamma_dat$scale))
-maxu_ncov <- 2*(tmp_ncov - mean(ncov_gamma_dat$median))
+# tmp_ncov <- mean(qgamma(.90, shape=ncov_gamma_dat$shape,
+#                         scale=ncov_gamma_dat$scale))
+# maxu_ncov <- 2*(tmp_ncov - mean(ncov_gamma_dat$median))
+tmp_ncov <- mean(qlnorm(.90, ncov_inc_fit_boot@samples$par1,
+                        ncov_inc_fit_boot@samples$par2))
+maxu_ncov <- 2*(tmp_ncov - mean(qlnorm(.50, ncov_inc_fit_boot@samples$par1,
+                        ncov_inc_fit_boot@samples$par2)))
 
-## make plots/data
-ncov_monitor_probs <- plot_risk_uncertainty(ncov_gamma_dat, phi=phis, 
-                                            long_tail_pct=0.99,
-                                            nreps=1e3,
-                                            max_u = maxu_ncov,
-                                            durations=durs, 
-                                            return_plot=FALSE,
-                                            return_data=TRUE,
-                                            include_xlab = FALSE,
-                                            yrange=yrange, 
-                                            include_legend=FALSE)
-
-ncov_monitor_cases <- ncov_monitor_probs$data %>% 
+emi_dat <- exp_miss_inf(dic_params, phis, durs) %>% #, ncov_inc_fit_boot@ests["p50", "est"]) %>% 
+    group_by(phi, d) %>% 
+    summarize(mean_p=mean(p),
+              p005=quantile(p, probs=.005),
+              p025=quantile(p, probs=.025),
+              p50=quantile(p, probs=.5),
+              p975=quantile(p, probs=.975),
+              p99=quantile(p, probs=.99),) %>% 
     mutate(
-        escaped_cases_per_1k_p05 = (p05 * 10000),
-        escaped_cases_per_1k_p25 = (p25 * 10000),
+        escaped_cases_per_1k_mean=(mean_p * 1e4),
+        escaped_cases_per_1k_p005 = (p005 * 10000),
+        escaped_cases_per_1k_p025 = (p025 * 10000),
         escaped_cases_per_1k_p50 = (p50 * 10000),
-        escaped_cases_per_1k_p75 = (p75 * 10000),
-        escaped_cases_per_1k_p95 = (p95 * 10000),
+        escaped_cases_per_1k_p975 = (p975 * 10000),
+        escaped_cases_per_1k_p99 = (p99 * 10000),
         risk_group = factor(phi, levels=phis,
                             labels=c("Infected (1 in 1)",
-                                     "High risk (1 in 100)",
-                                     "Some risk (1 in 1,000)",
-                                     "Low risk (1 in 10,000)"))
-    )
+                                     "High (1 in 100)",
+                                     "Medium (1 in 1,000)",
+                                     "Low (1 in 10,000)"))
+    ) %>% 
+    ungroup()
 
-am_plot_dat <- ncov_monitor_cases %>% 
-    mutate(escaped_cases_per_1k_p05 = ifelse(escaped_cases_per_1k_p05>100,
-                                             NA,escaped_cases_per_1k_p05),
-           escaped_cases_per_1k_p50 = ifelse(escaped_cases_per_1k_p50>100,
-                                             NA,escaped_cases_per_1k_p50),
-           escaped_cases_per_1k_p95 = ifelse(escaped_cases_per_1k_p95>100,
-                                             NA,escaped_cases_per_1k_p95),)
+# ## make plots/data
+# ncov_monitor_probs <- plot_risk_uncertainty(ncov_gamma_dat, phi=phis, 
+#                                             long_tail_pct=0.99,
+#                                             nreps=1e2,
+#                                             max_u=maxu_ncov,
+#                                             min_u=0,
+#                                             durations=durs, 
+#                                             return_plot=FALSE,
+#                                             return_data=TRUE,
+#                                             include_xlab=FALSE,
+#                                             yrange=yrange, 
+#                                             include_legend=FALSE)
+# 
+# ncov_monitor_cases <- ncov_monitor_probs$data %>% 
+#     mutate(
+#         escaped_cases_per_1k_p025 = (p025 * 10000),
+#         escaped_cases_per_1k_p05 = (p05 * 10000),
+#         escaped_cases_per_1k_p25 = (p25 * 10000),
+#         escaped_cases_per_1k_p50 = (p50 * 10000),
+#         escaped_cases_per_1k_p75 = (p75 * 10000),
+#         escaped_cases_per_1k_p95 = (p95 * 10000),
+#         escaped_cases_per_1k_p975 = (p975 * 10000),
+#         escaped_cases_per_1k_p99 = (p99 * 10000),
+#         risk_group = factor(phi, levels=phis,
+#                             labels=c("Infected (1 in 1)",
+#                                      "High (1 in 100)",
+#                                      "Medium (1 in 1,000)",
+#                                      "Low (1 in 10,000)"))
+#     )
 
-am_plot <- ggplot(ncov_monitor_cases,
+am_plot <- ggplot(emi_dat,
        aes(x=d, y=escaped_cases_per_1k_p50 %>% round, color=risk_group,
            group=risk_group, fill=risk_group)) +
     # geom_ribbon(aes(ymin=escaped_cases_per_1k_p25,
                     # ymax=escaped_cases_per_1k_p75), alpha=.5) +
-    geom_ribbon(aes(ymin=escaped_cases_per_1k_p05 %>% round,
-                    ymax=escaped_cases_per_1k_p95 %>% round), alpha=.25) +
+    geom_ribbon(aes(ymin=escaped_cases_per_1k_p025 %>% round,
+                    ymax=escaped_cases_per_1k_p975 %>% round), alpha=.25) +
     geom_line(size=2) +
-    ylab("Expected cases missed\nper 10,000 monitored") +
     xlab("Duration of monitoring (days)") +
-    scale_color_brewer("Risk group", type="qual") + 
-    scale_fill_brewer("Risk group", type="qual") + 
+    scale_color_brewer("Risk of infection", type="qual") + 
+    scale_fill_brewer("Risk of infection", type="qual") + 
     theme_bw() +
-    scale_y_sqrt(breaks=c(1,10,25,50,75,100))+
+    scale_y_continuous("Expected symptomatic infections\nmissed per 10,000 monitored,\nmedian and 95% CI",
+                 breaks=c(0,25,50,75,100))+
     coord_cartesian(ylim=c(0,100)) +
     theme(legend.position = c(.95,.9), legend.justification = c(1,1),
           axis.text=element_text(color="black"))
 
 
-am_tbl_dat <- ncov_monitor_cases %>% 
-    mutate(risk_group=reorder(risk_group, phi, mean)) %>% 
-    filter(d %in% c(5, 10, 15, 20)) %>% 
-    transmute(Duration=d,
+am_tbl_dat <- emi_dat %>% 
+    mutate(risk_group=reorder(risk_group, phi, mean)) %>%
+    filter(d %in% c(7, 14, 21)) %>% 
+    transmute(`Monitoring\nduration`=reorder(paste(d, "days"),d),
               risk_group=risk_group,
-              est=paste0(escaped_cases_per_1k_p50 %>% round(),
-                         " (", escaped_cases_per_1k_p05 %>% round(),
-                         ", ", escaped_cases_per_1k_p95 %>% round(), ")")) %>% 
+              est=paste0(escaped_cases_per_1k_mean %>%
+                             formatC(digits=1, format="f"),
+                         " (", escaped_cases_per_1k_p99 %>% formatC(digits=1, format="f"), ")")) %>% 
     spread(risk_group, est)
 
 colnames(am_tbl_dat) <- gsub("\\(", "\n\\(", colnames(am_tbl_dat))
+# colnames(am_tbl_dat) <- gsub("0\\)", "0\\)\nMedian (95% CI)", colnames(am_tbl_dat))
 # window_tbl <- tableGrob(window_tbl_dat[-1,], theme=ttheme_minimal())
 am_tbl <- ggtexttable(am_tbl_dat,
                       theme=ttheme("classic", padding=unit(c(8,8), "mm")),
                       rows=rep("", nrow(am_tbl_dat)))
+
 # grid.arrange(window_fig, window_tbl, nrow=2)
-ggarrange(am_plot, am_tbl, nrow=2)
+ggarrange(#am_plot,
+          am_tbl, nrow=1,
+          labels=c("Mean estimated symptomatic infections missed\n           per 10,000 monitored (99th percentile)"),
+          font.label=list(size=13, face="bold"), hjust=-0.3, vjust=6)
 ```
 
