@@ -3,7 +3,10 @@
 Real-time estimation of the novel coronavirus incubation time
 =============================================================
 
-Updated: Sun Feb 2 14:32:53 2020
+Updated: Tue Feb 4 17:11:56 2020
+
+[Read the medRxiv
+preprint!](https://www.medrxiv.org/content/10.1101/2020.02.02.20020016v1)
 
 Our lab has been collecting data (freely available at
 [`data/nCoV-IDD-traveler-data.csv`](https://github.com/HopkinsIDD/ncov_incubation/blob/master/data/nCoV-IDD-traveler-data.csv))
@@ -27,6 +30,7 @@ Quick links:
     analyses](#alternate-estimates-and-sensitivity-analyses)
 -   [Comparison to other estimates](#comparison-to-other-estimates)
 -   [Parameter estimates](#parameter-estimates)
+-   [Active monitoring analysis](#active-monitoring-analysis)
 
 Data summary
 ------------
@@ -233,7 +237,7 @@ comparison of our incubation periods are shown below:
 
 <img src="README_files/figure-markdown_strict/comparison-1.png" style="display: block; margin: auto;" />
 
-The median estimates from all models lie between 4.14 and 10.73. The
+The median estimates from all models lie between 4.14 and 5.61. The
 lower and upper tails for our distributions are all closer to the median
 than from the other studies, whether this is due to differences in data
 or in estimation methodologies is open for investigation.
@@ -276,14 +280,14 @@ distributions.
 </tr>
 <tr class="odd">
 <td style="text-align: left;">JHU-IDD</td>
-<td style="text-align: center;">weibull</td>
+<td style="text-align: center;">Weibull</td>
 <td style="text-align: right;">101</td>
 <td style="text-align: right;">3.11</td>
 <td style="text-align: right;">6.11</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">JHU-IDD</td>
-<td style="text-align: center;">erlang</td>
+<td style="text-align: center;">Erlang</td>
 <td style="text-align: right;">101</td>
 <td style="text-align: right;">14.00</td>
 <td style="text-align: right;">0.40</td>
@@ -318,6 +322,62 @@ distributions.
 </tr>
 </tbody>
 </table>
+
+Active monitoring analysis
+--------------------------
+
+Given these estimates of the incubation period, we predicted the number
+of symptomatic infections we would expect to miss over the course of an
+active monitoring program. We looked at active monitoring durations from
+1 to 28 days for groups of ‘low risk’ (1/10,000 chance of symptomatic
+infection), ‘medium risk’ (1/1,000), ‘high risk’ (1/100), and ‘infected’
+(1/1), similar to the analysis in [Reich *et al*
+(2018)](https://www.nature.com/articles/s41598-018-19406-x).
+
+<table>
+<caption>Mean estimated symptomatic infections missed per 10,000 monitored (99th percentile), by duration of monitoring and level of risk</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Monitoring duration</th>
+<th style="text-align: left;">Low (1 in 10,000)</th>
+<th style="text-align: left;">Medium (1 in 1,000)</th>
+<th style="text-align: left;">High (1 in 100)</th>
+<th style="text-align: left;">Infected (1 in 1)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">7 days</td>
+<td style="text-align: left;">0.2 (0.4)</td>
+<td style="text-align: left;">2.0 (3.9)</td>
+<td style="text-align: left;">19.7 (39.4)</td>
+<td style="text-align: left;">1971.5 (3940.2)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">14 days</td>
+<td style="text-align: left;">0.0 (0.0)</td>
+<td style="text-align: left;">0.1 (0.4)</td>
+<td style="text-align: left;">0.6 (4.5)</td>
+<td style="text-align: left;">64.4 (449.6)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">21 days</td>
+<td style="text-align: left;">0.0 (0.0)</td>
+<td style="text-align: left;">0.0 (0.1)</td>
+<td style="text-align: left;">0.1 (0.8)</td>
+<td style="text-align: left;">5.3 (75.3)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">28 days</td>
+<td style="text-align: left;">0.0 (0.0)</td>
+<td style="text-align: left;">0.0 (0.0)</td>
+<td style="text-align: left;">0.0 (0.2)</td>
+<td style="text-align: left;">0.8 (17.0)</td>
+</tr>
+</tbody>
+</table>
+
+<img src="README_files/figure-markdown_strict/am-figure-1.png" style="display: block; margin: auto;" />
 
 *(Qulu Zheng, Hannah Meredith, Kyra Grantz, Qifang Bi, Forrest Jones,
 and Stephen Lauer all contributed to this project)*

@@ -299,6 +299,8 @@ knitr::kable(year_tbl)
 
 Updated: `r date()`
 
+[Read the medRxiv preprint!](https://www.medrxiv.org/content/10.1101/2020.02.02.20020016v1)
+
 Our lab has been collecting data (freely available at [`data/nCoV-IDD-traveler-data.csv`](https://github.com/HopkinsIDD/ncov_incubation/blob/master/data/nCoV-IDD-traveler-data.csv)) on the exposure and symptom onset for novel coronavirus (nCoV-2019) cases that have been confirmed outside of the Hubei province.
 These cases have been confirmed either in other countries or in regions of China with no known local transmission.
 We search for news articles and reports in both English and Chinese and abstract the data necessary to estimate the incubation period of nCoV-2019.
@@ -313,6 +315,7 @@ Quick links:
 - [Alternate estimates and sensitivity analyses](#alternate-estimates-and-sensitivity-analyses)
 - [Comparison to other estimates](#comparison-to-other-estimates)
 - [Parameter estimates](#parameter-estimates)
+- [Active monitoring analysis](#active-monitoring-analysis)
 
 ## Data summary
 
@@ -409,13 +412,13 @@ all_est_plot <- ncov_inc_fit_boot@ests[-2, -4] %>%
                   # rename(est_foreign=est, CIlow_foreign=CIlow,
                   #        CIhigh_foreign=CIhigh) %>% 
                   mutate(qtile=c("mean", 2.5, 5, 25, 50, 75, 95, 97.5),
-                         type="weibull")) %>% 
+                         type="Weibull")) %>% 
     bind_rows(ncov_erl_fit@ests[-2, -4] %>% 
                   as.data.frame() %>% 
                   # rename(est_year=est, CIlow_year=CIlow,
                   #        CIhigh_year=CIhigh) %>% 
                   mutate(qtile=c("mean", 2.5, 5, 25, 50, 75, 95, 97.5),
-                         type="erlang")) %>% 
+                         type="Erlang")) %>% 
     mutate(est=ifelse(qtile=="mean", exp(est), est),
            CIlow=ifelse(qtile=="mean", exp(CIlow), CIlow),
            CIhigh=ifelse(qtile=="mean", exp(CIhigh), CIhigh),
@@ -537,11 +540,11 @@ backer_comp <- ncov_inc_fit_boot@ests[-2, -4] %>%
     bind_rows(ncov_wei_fit_boot@ests[-2, -4] %>% 
                   as.data.frame() %>% 
                   mutate(qtile=c("mean",2.5, 5, 25, 50, 75, 95, 97.5),
-                         type="weibull")) %>% 
+                         type="Weibull")) %>% 
     bind_rows(ncov_erl_fit@ests[-2, -4] %>%
                   as.data.frame() %>%
                   mutate(qtile=c("mean",2.5, 5, 25, 50, 75, 95, 97.5),
-                         type="erlang")) %>%
+                         type="Erlang")) %>%
     mutate(est=ifelse(qtile=="mean", exp(est), est),
            CIlow=ifelse(qtile=="mean",exp(CIlow), CIlow),
            CIhigh=ifelse(qtile=="mean",exp(CIhigh), CIhigh),
@@ -551,27 +554,27 @@ backer_comp <- ncov_inc_fit_boot@ests[-2, -4] %>%
     spread(qtile, est, sep="_") %>%
     mutate(obs=nrow(ncov)) %>% 
     bind_rows(backer_params %>% 
-                  mutate(`qtile_2.5`=ifelse(type=="weibull",
+                  mutate(`qtile_2.5`=ifelse(type=="Weibull",
                                           qweibull(.025, par1, par2),
                                           ifelse(type=="gamma",
                                                  qgamma(.025, par1, scale=par2),
                                                  qlnorm(.025, par1, par2))),
-                         qtile_25=ifelse(type=="weibull",
+                         qtile_25=ifelse(type=="Weibull",
                                           qweibull(.25, par1, par2),
                                           ifelse(type=="gamma",
                                                  qgamma(.25, par1, scale=par2),
                                                  qlnorm(.25, par1, par2))),
-                         qtile_50=ifelse(type=="weibull",
+                         qtile_50=ifelse(type=="Weibull",
                                           qweibull(.5, par1, par2),
                                           ifelse(type=="gamma",
                                                  qgamma(.5, par1, scale=par2),
                                                  qlnorm(.5, par1, par2))),
-                         qtile_75=ifelse(type=="weibull",
+                         qtile_75=ifelse(type=="Weibull",
                                           qweibull(.75, par1, par2),
                                           ifelse(type=="gamma",
                                                  qgamma(.75, par1, scale=par2),
                                                  qlnorm(.75, par1, par2))),
-                         `qtile_97.5`=ifelse(type=="weibull",
+                         `qtile_97.5`=ifelse(type=="Weibull",
                                           qweibull(.975, par1, par2),
                                           ifelse(type=="gamma",
                                                  qgamma(.975, par1, scale=par2),
@@ -622,13 +625,13 @@ param_est <- ncov_inc_fit_boot@ests[1:2, "est"] %>% t() %>%
                   as.data.frame() %>% 
                   rename(par1=shape, par2=scale) %>% 
                   mutate(study="JHU-IDD",
-                         type="weibull",
+                         type="Weibull",
                          obs=nrow(ncov))) %>% 
     bind_rows(ncov_erl_fit@ests[1:2, "est"] %>% t() %>% 
                   as.data.frame() %>% 
                   rename(par1=shape, par2=scale) %>% 
                   mutate(study="JHU-IDD",
-                         type="erlang",
+                         type="Erlang",
                          obs=nrow(ncov))) %>% 
     bind_rows(backer_params) %>% 
     select(study, type, obs, par1, par2) %>% 
@@ -638,5 +641,111 @@ param_est <- ncov_inc_fit_boot@ests[1:2, "est"] %>% t() %>%
 knitr::kable(param_est)
 ```
 
+## Active monitoring analysis
+
+Given these estimates of the incubation period, we predicted the number of symptomatic infections we would expect to miss over the course of an active monitoring program.
+We looked at active monitoring durations from 1 to 28 days for groups of 'low risk' (1/10,000 chance of symptomatic infection), 'medium risk' (1/1,000), 'high risk' (1/100), and 'infected' (1/1), similar to the analysis in [Reich *et al* (2018)](https://www.nature.com/articles/s41598-018-19406-x).
+
+```{r active-monitoring-tbl}
+# saveRDS(ncov_inc_fit_boot, "generated-data/ln-fit-boot.rds")
+# ncov_inc_fit_boot <- readRDS("generated-data/ln-fit-boot.rds")
+
+## function similar to that of activemonitr's plot_risk_uncertainty()
+## but for log-normal distribution
+exp_miss_inf <- function(dic_preds,
+                         phis,
+                         durations,
+                         max_u=NULL){
+    if(!is.null(max_u)){
+        # u <- qunif(seq(0,1,.01),0,max_u)
+        u <- qexp(seq(0,0.99,.01), -log(1-0.99)/max_u)
+    } else u <- 0
+    dic_preds$idx <- seq(nrow(dic_preds))
+    return(crossing(idx=dic_preds$idx,
+                    phi=phis,
+                    d=durations,
+                    u) %>% 
+        left_join(dic_preds, by="idx") %>% 
+        mutate(p=plnorm(d+u, par1, par2, lower.tail=F)*phi,
+               emi_per_10k=1e4*p)) %>% 
+        group_by(idx, phi, d, par1, par2) %>% 
+        summarize(p=mean(p))
+}
+
+dic_params <- ncov_inc_fit_boot@samples
+phis <- c(1, 1/100, 1/1000, 1/10000)
+durs <- 1:28
+
+emi_dat <- exp_miss_inf(dic_params, phis, durs) %>%
+    group_by(phi, d) %>% 
+    summarize(mean_p=mean(p),
+              p01=quantile(p, probs=.01),
+              p025=quantile(p, probs=.025),
+              p50=quantile(p, probs=.5),
+              p975=quantile(p, probs=.975),
+              p99=quantile(p, probs=.99),) %>% 
+    mutate(
+        escaped_cases_per_1k_mean=(mean_p * 1e4),
+        escaped_cases_per_1k_p01 = (p01 * 10000),
+        escaped_cases_per_1k_p025 = (p025 * 10000),
+        escaped_cases_per_1k_p50 = (p50 * 10000),
+        escaped_cases_per_1k_p975 = (p975 * 10000),
+        escaped_cases_per_1k_p99 = (p99 * 10000),
+        risk_group = factor(phi, levels=phis,
+                            labels=c("Infected (1 in 1)",
+                                     "High (1 in 100)",
+                                     "Medium (1 in 1,000)",
+                                     "Low (1 in 10,000)"))
+    ) %>% 
+    ungroup()
+
+am_tbl_dat <- emi_dat %>% 
+    mutate(risk_group=reorder(risk_group, phi, mean)) %>%
+    filter(d %in% c(7, 14, 21, 28)) %>% 
+    transmute(`Monitoring duration`=reorder(paste(d, "days"),d),
+              risk_group=risk_group,
+              est=paste0(escaped_cases_per_1k_mean %>%
+                             formatC(digits=1, format="f"),
+                         " (", escaped_cases_per_1k_p99 %>% formatC(digits=1, format="f"), ")")) %>% 
+    spread(risk_group, est) %>% 
+    as.data.frame()
+
+# colnames(am_tbl_dat) <- gsub("\\(", "\n\\(", colnames(am_tbl_dat))
+# colnames(am_tbl_dat) <- gsub("0\\)", "0\\)\nMedian (95% CI)", colnames(am_tbl_dat))
+# window_tbl <- tableGrob(window_tbl_dat[-1,], theme=ttheme_minimal())
+# am_tbl <- ggtexttable(am_tbl_dat,
+#                       theme=ttheme("classic", padding=unit(c(8,8), "mm")),
+#                       rows=rep("", nrow(am_tbl_dat)))
+
+knitr::kable(am_tbl_dat,
+             caption="Mean estimated symptomatic infections missed per 10,000 monitored (99th percentile), by duration of monitoring and level of risk")
+```
+
+```{r am-figure}
+# grid.arrange(window_fig, window_tbl, nrow=2)
+# ggarrange(#am_plot,
+#           am_tbl, nrow=1,
+#           labels=c("Mean estimated symptomatic infections missed\n           per 10,000 monitored (99th percentile)"),
+#           font.label=list(size=13, face="bold"), hjust=-0.35, vjust=5.5)
+
+emi_dat %>% 
+    filter(phi==1) %>% 
+    select(d, est_mean=escaped_cases_per_1k_mean,
+           est_p01=escaped_cases_per_1k_p01,
+           est_p99=escaped_cases_per_1k_p99) %>% 
+    gather("quantile", "cases", -d) %>%
+ggplot(aes(x=d, y=cases/1e4, linetype=quantile)) + 
+    geom_line() + 
+    scale_y_log10("Proportion of symptomatic infections\n that have yet to develop symptoms",
+                  breaks=10^(-4:0),
+                  labels=c("1/10,000", "1/1,000", "1/100", "1/10", "1/1")) +
+    scale_x_continuous("Days since infection",
+                       breaks=seq(0,28,7)) +
+    coord_cartesian(ylim=c(1e-4, 1)) +
+    theme_bw() +
+    theme(axis.text=element_text(color="black"),
+          legend.title=element_blank(),
+          legend.position=c(0.8, 0.8))
+```
 
 *(Qulu Zheng, Hannah Meredith, Kyra Grantz, Qifang Bi, Forrest Jones, and Stephen Lauer all contributed to this project)*
