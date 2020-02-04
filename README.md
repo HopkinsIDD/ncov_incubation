@@ -3,7 +3,7 @@
 Real-time estimation of the novel coronavirus incubation time
 =============================================================
 
-Updated: Tue Feb 4 17:11:56 2020
+Updated: Tue Feb 4 17:19:32 2020
 
 [Read the medRxiv
 preprint!](https://www.medrxiv.org/content/10.1101/2020.02.02.20020016v1)

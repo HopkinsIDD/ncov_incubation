@@ -741,6 +741,7 @@ ggplot(aes(x=d, y=cases/1e4, linetype=quantile)) +
                   labels=c("1/10,000", "1/1,000", "1/100", "1/10", "1/1")) +
     scale_x_continuous("Days since infection",
                        breaks=seq(0,28,7)) +
+    scale_linetype_discrete(labels=c("Mean", "1st percentile", "99th percentile")) +
     coord_cartesian(ylim=c(1e-4, 1)) +
     theme_bw() +
     theme(axis.text=element_text(color="black"),
