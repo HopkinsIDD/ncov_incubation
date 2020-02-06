@@ -3,7 +3,7 @@
 Real-time estimation of the novel coronavirus incubation time
 =============================================================
 
-Updated: Tue Feb 4 17:19:32 2020
+Updated: Thu Feb 6 17:25:57 2020
 
 [Read the medRxiv
 preprint!](https://www.medrxiv.org/content/10.1101/2020.02.02.20020016v1)
@@ -31,6 +31,7 @@ Quick links:
 -   [Comparison to other estimates](#comparison-to-other-estimates)
 -   [Parameter estimates](#parameter-estimates)
 -   [Active monitoring analysis](#active-monitoring-analysis)
+-   [Time to hospitalization](#time-to-hospitalization)
 
 Data summary
 ------------
@@ -379,5 +380,83 @@ infection), ‘medium risk’ (1/1,000), ‘high risk’ (1/100), and ‘infecte
 
 <img src="README_files/figure-markdown_strict/am-figure-1.png" style="display: block; margin: auto;" />
 
-*(Qulu Zheng, Hannah Meredith, Kyra Grantz, Qifang Bi, Forrest Jones,
-and Stephen Lauer all contributed to this project)*
+Time to hospitalization
+-----------------------
+
+We can use the same procedure for estimating the incubation period to
+estimate the time from symptom onset to hospitalization.
+
+<img src="README_files/figure-markdown_strict/hosp-data-summary-1.png" alt="This figure displays the symptom onset and hospitalization windows for each case in our dataset, relative to the right-bound of the symptom onset window (SR). The blue bars indicate the the symptom onset windows and the red bars indicate the hospitalization windows for each case. Purple areas are where those two bars overlap."  />
+<p class="caption">
+This figure displays the symptom onset and hospitalization windows for
+each case in our dataset, relative to the right-bound of the symptom
+onset window (SR). The blue bars indicate the the symptom onset windows
+and the red bars indicate the hospitalization windows for each case.
+Purple areas are where those two bars overlap.
+</p>
+
+Of the 93 individuals who developed symptoms in the community (as
+opposed to in isolation), 26 (28%) were hospitalized within a day.
+
+We modeled the time to hospitalization as a gamma distribution:
+
+<img src="README_files/figure-markdown_strict/hosp-plots-1.png" style="display: block; margin: auto;" />
+
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th style="text-align: right;">est</th>
+<th style="text-align: right;">CIlow</th>
+<th style="text-align: right;">CIhigh</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>shape</td>
+<td style="text-align: right;">0.444</td>
+<td style="text-align: right;">0.290</td>
+<td style="text-align: right;">0.691</td>
+</tr>
+<tr class="even">
+<td>scale</td>
+<td style="text-align: right;">3.761</td>
+<td style="text-align: right;">2.325</td>
+<td style="text-align: right;">5.489</td>
+</tr>
+<tr class="odd">
+<td>p2.5</td>
+<td style="text-align: right;">0.001</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">0.011</td>
+</tr>
+<tr class="even">
+<td>p25</td>
+<td style="text-align: right;">0.129</td>
+<td style="text-align: right;">0.027</td>
+<td style="text-align: right;">0.344</td>
+</tr>
+<tr class="odd">
+<td>p50</td>
+<td style="text-align: right;">0.680</td>
+<td style="text-align: right;">0.297</td>
+<td style="text-align: right;">1.150</td>
+</tr>
+<tr class="even">
+<td>p75</td>
+<td style="text-align: right;">2.163</td>
+<td style="text-align: right;">1.384</td>
+<td style="text-align: right;">2.922</td>
+</tr>
+<tr class="odd">
+<td>p97.5</td>
+<td style="text-align: right;">8.860</td>
+<td style="text-align: right;">6.323</td>
+<td style="text-align: right;">11.345</td>
+</tr>
+</tbody>
+</table>
+
+The model estimates that time to hospitalization is 1.7 days, on
+average. The majority of cases report quickly, though there is a long
+tail.

@@ -23,12 +23,10 @@ cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2"
 set.seed(1)
 
 ## read in coronavirus data
-ncov_raw <- read_csv("data/nCoV-IDD-traveler-data.csv") %>% 
-    rename(EL_date=EL, ER_date=ER, SL_date=SL, SR_date=SR)
-
-## change dates to restrict exposure to after December 1
-## add times where missing
-ncov_ELSR <- ncov_raw %>% 
+ncov <- read_csv("data/nCoV-IDD-traveler-data.csv") %>% 
+    rename(EL_date=EL, ER_date=ER, SL_date=SL, SR_date=SR) %>% 
+    ## change dates to restrict exposure to after December 1
+    ## add times where missing
     # if EL is missing or before 1 Dec 2019, use 1 Dec 2019
     mutate(EL_date=ifelse(is.na(EL_date),"2019-12-01 00:00:00", EL_date) %>% 
                ymd_hms() %>% 
@@ -39,9 +37,7 @@ ncov_ELSR <- ncov_raw %>%
                           PR, SR_date) %>% 
                ymd_hms(),
            # SR_fever is only for cases with confirmed fever dates
-           SR_fever=ymd_hms(SR_fever))
-
-ncov <- ncov_ELSR %>% 
+           SR_fever=ymd_hms(SR_fever)) %>% 
     # if ER is missing, use SR; if SL is missing, use EL
     mutate(ER_date=if_else(is.na(ER_date), SR_date, ymd_hms(ER_date)),
            SL_date=if_else(is.na(SL_date), EL_date, ymd_hms(SL_date)),
@@ -316,6 +312,7 @@ Quick links:
 - [Comparison to other estimates](#comparison-to-other-estimates)
 - [Parameter estimates](#parameter-estimates)
 - [Active monitoring analysis](#active-monitoring-analysis)
+- [Time to hospitalization](#time-to-hospitalization)
 
 ## Data summary
 
@@ -376,14 +373,17 @@ The first model we fit is to all of the data and output the median, 2.5th, and 9
 
 ```{r dic-plots}
 ## plot the boot fit and table of intervals
-plot(ncov_inc_fit_asym, main="CDF of incubation times",
-     xlab="Incubation time, in days", ylab="", xlim=c(0,20))
+ci.col <- rgb(230/255,85/255,13/255,1)
+
+plot(ncov_inc_fit_boot, ylab="Proportion symptomatic cases with symptoms",
+     xlab="Days after infection", main="", xlim=c(0,20))
+points(y=rep(0.025,2), x=c(ncov_inc_fit_boot@ests['p2.5','CIlow'], ncov_inc_fit_boot@ests['p2.5','CIhigh']), type='l', col=ci.col, lwd=2.5)
+points(y=rep(0.5,2), x=c(ncov_inc_fit_boot@ests['p50','CIlow'], ncov_inc_fit_boot@ests['p50','CIhigh']), type='l', col=ci.col, lwd=2.5)
+points(y=rep(0.975,2), x=c(ncov_inc_fit_boot@ests['p97.5','CIlow'], ncov_inc_fit_boot@ests['p97.5','CIhigh']), type='l', col=ci.col, lwd=2.5)
 
 knitr::kable(ncov_inc_fit_boot@ests[,-4])
-
-## plot the asymptotic fit and table of intervals
-# plot(ncov_inc_fit_asym, main="asymptotic results")
-# ncov_inc_fit_asym
+# exp_val <- exp(ncov_inc_fit_boot@ests["meanlog", "est"]+0.5*(ncov_inc_fit_boot@ests["sdlog", "est"])^2)
+# print(paste("The estimated mean is", exp_val))
 ```
 
 The median incubation period lasts `r ncov_inc_fit_boot@ests["p50", "est"]` days (CI: `r ncov_inc_fit_boot@ests["p50", "CIlow"]`-`r ncov_inc_fit_boot@ests["p50", "CIhigh"]`).
@@ -749,4 +749,156 @@ ggplot(aes(x=d, y=cases/1e4, linetype=quantile)) +
           legend.position=c(0.8, 0.8))
 ```
 
-*(Qulu Zheng, Hannah Meredith, Kyra Grantz, Qifang Bi, Forrest Jones, and Stephen Lauer all contributed to this project)*
+## Time to hospitalization
+
+We can use the same procedure for estimating the incubation period to estimate the time from symptom onset to hospitalization.
+
+```{r symptom-to-hospital}
+## read in coronavirus data
+ncov_hosp <- read_csv("data/nCoV-IDD-traveler-data.csv") %>% 
+    rename(EL_date=EL, ER_date=ER, SL_date=SL, SR_date=SR,
+           PL_date=PL, PR_date=PR) %>% 
+    ## change dates to restrict exposure to after December 1
+    ## add times where missing
+    # if EL is missing or before 1 Dec 2019, use 1 Dec 2019
+    mutate(EL_date=ifelse(is.na(EL_date),"2019-12-01 00:00:00", EL_date) %>% 
+               ymd_hms() %>% 
+               if_else(. < ymd_hms("2019-12-01 00:00:00"),
+                       ymd_hms("2019-12-01 00:00:00"), .),
+           # if SR is missing, use PR
+           SR_date=ifelse(ymd_hms(SR_date) %>% is.na,
+                          PR_date, SR_date) %>% 
+               ymd_hms(),
+           # SR_fever is only for cases with confirmed fever dates
+           SR_fever=ymd_hms(SR_fever),
+           PR_date=ymd_hms(PR_date)) %>% 
+    # if ER is missing, use SR; if SL is missing, use EL; if PL missing use SL
+    mutate(ER_date=if_else(is.na(ER_date), SR_date, ymd_hms(ER_date)),
+           SL_date=if_else(is.na(SL_date), EL_date, ymd_hms(SL_date)),
+           PL_date=if_else(is.na(PL_date), SL_date, ymd_hms(PL_date)),
+           SL_fever= if_else(is.na(SL_fever) & !is.na(SR_fever), 
+                             SL_date,
+                             ymd_hms(SL_fever))) %>% 
+    # calculate days since 1 Dec 2019
+    mutate(EL=difftime(EL_date, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+               as.numeric(),
+           ER=difftime(ER_date, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+               as.numeric(),
+           SL=difftime(SL_date, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+               as.numeric(),
+           SR=difftime(SR_date, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+               as.numeric(),
+           SL_fever=difftime(SL_fever,
+                             ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+               as.numeric(),
+           SR_fever=difftime(SR_fever,
+                             ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+               as.numeric(),
+           PL=difftime(PL_date, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+               as.numeric(),
+           PR=difftime(PR_date, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+               as.numeric(),
+           S_int=SR-SL,
+           P_int=PR-PL,
+           S_fever_int=SR_fever-SL_fever,
+           L_diff=PL-SL,
+           R_diff=PR-SR) %>% 
+    # remove any entries missing EL, ER, SL, or SR
+    filter(!is.na(SL), !is.na(SR),!is.na(PL), !is.na(PR)) %>% 
+    # remove entries that haven't been reviewed by two people
+    filter(!is.na(REVIEWER2)) %>% 
+    # remove entries with exposure/onset intervals less than 0
+    # remove entries where SR greater than PR or SL greater than PL
+    filter(S_int > 0, P_int > 0, SR<=PR, PL>=SL)
+
+
+```
+
+```{r hosp-data-summary, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="This figure displays the symptom onset and hospitalization windows for each case in our dataset, relative to the right-bound of the symptom onset window (SR). The blue bars indicate the the symptom onset windows and the red bars indicate the hospitalization windows for each case. Purple areas are where those two bars overlap."}
+ncov_hosp %>%
+    mutate(PLnew = PL-SR,
+           PRnew = PR-SR,
+           Pmid = (PLnew + PRnew)/2,
+           SLnew = SL-SR,
+           SRnew = SR-SR,
+           Smid = (SLnew + SRnew)/2,
+           UID=reorder(UID, PR-SL)) %>% 
+    ggplot(aes(y=factor(UID))) + 
+    geom_segment(aes(x=SLnew, xend=SRnew, yend=factor(UID)), 
+                 color="#0072B2", size=2, alpha=.25) +
+    geom_segment(aes(x=PLnew, xend=PRnew, yend=factor(UID)), 
+                 size=2, color="#CC0000", alpha=.25) +
+    geom_point(aes(x=Smid, y=factor(UID)), size=0.5, color="#0072B2") +
+    geom_point(aes(x=Pmid, y=factor(UID)), size=0.5, color="#CC0000") +
+    geom_segment(aes(x=Smid, xend=Pmid, yend=factor(UID)), size=0.33, color="#999999") +
+    #ggtitle("Exposure and symptom onset windows") +
+    scale_x_continuous("Days from last possible time of symptom onset") +
+    scale_y_discrete("Case") +
+    theme_bw() +
+    theme(axis.text.y = element_blank(),
+          axis.ticks.y= element_blank(),
+          axis.text.x=element_text(color="black"))
+```
+
+Of the `r nrow(ncov_hosp)` individuals who developed symptoms in the community (as opposed to in isolation), `r sum((ncov_hosp$R_diff+ncov_hosp$L_diff<=1) & ncov_hosp$P_int<=1)` (`r (100*mean((ncov_hosp$R_diff+ncov_hosp$L_diff<=1) & ncov_hosp$P_int<=1)) %>% round()`%) were hospitalized within a day.
+
+We modeled the time to hospitalization as a gamma distribution:
+
+```{r fit-hosp-dic, results='hide', cache=T}
+set.seed(1)
+#make the data to pass in to dic.fit
+ncov_hosp_dat <- ncov_hosp %>% 
+    mutate(type=as.numeric(S_int==0) + as.numeric(P_int==0)) %>% 
+    select(SL, SR, PL, PR, type) %>% 
+    rename(EL=SL, ER=SR) %>% 
+    rename(SL=PL, SR=PR) %>% 
+    as.data.frame()
+
+#fit it...use bootstrap interstions for now. MCMC better?
+ncov_hosp_fit_boot <- dic.fit(ncov_hosp_dat,dist="G", n.boots=1000,
+                              ptiles = c(0.025, 0.25, 0.5, 0.75, 0.975))
+```
+
+```{r hosp-plots}
+## plot the boot fit and table of intervals
+plot(ncov_hosp_fit_boot, ylab="Proportion symptomatic cases to hospital",
+     xlab="Days after infection", main="", xlim=c(0,20))
+points(y=rep(0.025,2), x=c(ncov_hosp_fit_boot@ests['p2.5','CIlow'], ncov_hosp_fit_boot@ests['p2.5','CIhigh']), type='l', col=ci.col, lwd=2.5)
+points(y=rep(0.5,2), x=c(ncov_hosp_fit_boot@ests['p50','CIlow'], ncov_hosp_fit_boot@ests['p50','CIhigh']), type='l', col=ci.col, lwd=2.5)
+points(y=rep(0.975,2), x=c(ncov_hosp_fit_boot@ests['p97.5','CIlow'], ncov_hosp_fit_boot@ests['p97.5','CIhigh']), type='l', col=ci.col, lwd=2.5)
+
+knitr::kable(ncov_hosp_fit_boot@ests[,-4])
+```
+
+The model estimates that time to hospitalization is `r (ncov_hosp_fit_boot@ests["shape", "est"]*ncov_hosp_fit_boot@ests["scale", "est"]) %>% round(1)` days, on average.
+The majority of cases report quickly, though there is a long tail.
+
+
+```{r fit-hosp-mainland, results='hide', cache=T, include=F}
+set.seed(1)
+#make the data to pass in to dic.fit
+ncov_hosp_ml_dat <- ncov_hosp %>%
+    filter(COUNTRY.DEST == "China" &
+               !(PROVINCE.DEST %in% c("HongKong", "Macau"))) %>% 
+    mutate(type=as.numeric(S_int==0) + as.numeric(P_int==0)) %>% 
+    select(SL, SR, PL, PR, type) %>% 
+    rename(EL=SL, ER=SR) %>% 
+    rename(SL=PL, SR=PR) %>% 
+    as.data.frame()
+
+#fit it...use bootstrap interstions for now. MCMC better?
+ncov_hosp_ml_fit <- dic.fit(ncov_hosp_ml_dat,dist="G", n.boots=1000,
+                            ptiles = c(0.025, 0.25, 0.5, 0.75, 0.975))
+```
+
+
+```{r hosp-plots-ml, include=F}
+## plot the boot fit and table of intervals
+plot(ncov_hosp_ml_fit, ylab="Proportion symptomatic cases to hospital",
+     xlab="Days after infection", main="", xlim=c(0,20))
+points(y=rep(0.025,2), x=c(ncov_hosp_ml_fit@ests['p2.5','CIlow'], ncov_hosp_ml_fit@ests['p2.5','CIhigh']), type='l', col=ci.col, lwd=2.5)
+points(y=rep(0.5,2), x=c(ncov_hosp_ml_fit@ests['p50','CIlow'], ncov_hosp_ml_fit@ests['p50','CIhigh']), type='l', col=ci.col, lwd=2.5)
+points(y=rep(0.975,2), x=c(ncov_hosp_ml_fit@ests['p97.5','CIlow'], ncov_hosp_ml_fit@ests['p97.5','CIhigh']), type='l', col=ci.col, lwd=2.5)
+
+knitr::kable(ncov_hosp_ml_fit@ests[,-4])
+```
