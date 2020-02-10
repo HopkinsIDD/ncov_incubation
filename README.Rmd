@@ -200,28 +200,6 @@ knitr::kable(foreign_tbl)
 # ncov_foreign_fit_asym
 ```
 
-```{r fit-foreign-fever-dics, results='hide', cache=T, eval=F}
-set.seed(1)
-ncov_foreign_fever_dic <- ncov_foreign_fever %>% 
-    select(EL, ER, SL, SR) %>% 
-    mutate(type=0) %>% 
-    as.data.frame()
-
-## foreign fever not working
-ncov_foreign_fever_fit_asym <- dic.fit(ncov_foreign_fever_dic,dist="L",
-                             ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
-ncov_foreign_fever_fit_boot <- dic.fit(ncov_foreign_fever_dic,dist="L",
-                                       n.boots=1000,
-                             ptiles = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
-
-```
-
-```{foreign-fever-dics, eval=F}
-## plot the asymptotic fit and table of intervals
-plot(ncov_foreign_fever_fit_asym, main="asymptotic results (foreign only)")
-ncov_foreign_fever_fit_asym
-```
-
 ```{r fit-year-dics, results='hide', cache=T}
 set.seed(1)
 ## change dates to restrict exposure to after December 1
@@ -728,25 +706,30 @@ knitr::kable(am_tbl_dat,
 #           labels=c("Mean estimated symptomatic infections missed\n           per 10,000 monitored (99th percentile)"),
 #           font.label=list(size=13, face="bold"), hjust=-0.35, vjust=5.5)
 
+label_dat <- tibble(label_text=c("Mean", "1st percentile", "99th percentile"),
+                    label_x=c(21, 5, 21),
+                    label_y=c(0.001, 0.001, 0.025))
+
 emi_dat %>% 
     filter(phi==1) %>% 
     select(d, est_mean=escaped_cases_per_1k_mean,
            est_p01=escaped_cases_per_1k_p01,
            est_p99=escaped_cases_per_1k_p99) %>% 
     gather("quantile", "cases", -d) %>%
-ggplot(aes(x=d, y=cases/1e4, linetype=quantile)) + 
-    geom_line() + 
+ggplot() + 
+    geom_line(aes(x=d, y=cases/1e4, linetype=quantile)) + 
+    geom_text(data=label_dat, aes(x=label_x, y=label_y, label=label_text)) +
     scale_y_log10("Proportion of symptomatic infections\n that have yet to develop symptoms",
                   breaks=10^(-4:0),
                   labels=c("1/10,000", "1/1,000", "1/100", "1/10", "1/1")) +
     scale_x_continuous("Days since infection",
                        breaks=seq(0,28,7)) +
-    scale_linetype_discrete(labels=c("Mean", "1st percentile", "99th percentile")) +
+    scale_linetype_discrete("",
+                            labels=c("Mean", "1st percentile", "99th percentile"),
+                            guide=F) +
     coord_cartesian(ylim=c(1e-4, 1)) +
     theme_bw() +
-    theme(axis.text=element_text(color="black"),
-          legend.title=element_blank(),
-          legend.position=c(0.8, 0.8))
+    theme(axis.text=element_text(color="black"))
 ```
 
 ## Time to hospitalization
