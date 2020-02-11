@@ -3,7 +3,7 @@
 Real-time estimation of the novel coronavirus incubation time
 =============================================================
 
-Updated: Mon Feb 10 14:08:55 2020
+Updated: Mon Feb 10 22:21:35 2020
 
 [Read the medRxiv
 preprint!](https://www.medrxiv.org/content/10.1101/2020.02.02.20020016v1)
@@ -238,7 +238,7 @@ comparison of our incubation periods are shown below:
 
 <img src="README_files/figure-markdown_strict/comparison-1.png" style="display: block; margin: auto;" />
 
-The median estimates from all models lie between 4.14 and 5.61. The
+The median estimates from all models lie between 4.14 and 6.38. The
 lower and upper tails for our distributions are all closer to the median
 than from the other studies, whether this is due to differences in data
 or in estimation methodologies is open for investigation.
@@ -296,23 +296,23 @@ distributions.
 <tr class="odd">
 <td style="text-align: left;">Backer 2020</td>
 <td style="text-align: center;">Weibull</td>
-<td style="text-align: right;">34</td>
-<td style="text-align: right;">2.37</td>
-<td style="text-align: right;">6.54</td>
+<td style="text-align: right;">88</td>
+<td style="text-align: right;">3.04</td>
+<td style="text-align: right;">7.20</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Backer 2020</td>
 <td style="text-align: center;">gamma</td>
-<td style="text-align: right;">34</td>
-<td style="text-align: right;">4.96</td>
-<td style="text-align: right;">1.15</td>
+<td style="text-align: right;">88</td>
+<td style="text-align: right;">6.10</td>
+<td style="text-align: right;">1.06</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">Backer 2020</td>
 <td style="text-align: center;">log-normal</td>
-<td style="text-align: right;">34</td>
-<td style="text-align: right;">1.63</td>
-<td style="text-align: right;">0.55</td>
+<td style="text-align: right;">88</td>
+<td style="text-align: right;">1.80</td>
+<td style="text-align: right;">0.48</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Li 2020</td>
