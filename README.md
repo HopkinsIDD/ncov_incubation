@@ -3,7 +3,7 @@
 Real-time estimation of the novel coronavirus incubation time
 =============================================================
 
-Updated: Mon Feb 10 22:21:35 2020
+Updated: Tue Feb 11 11:59:19 2020
 
 [Read the medRxiv
 preprint!](https://www.medrxiv.org/content/10.1101/2020.02.02.20020016v1)
@@ -230,7 +230,7 @@ Comparison to other estimates
 
 [Backer, Klinkenberg, &
 Wallinga](https://www.medrxiv.org/content/10.1101/2020.01.27.20018986v1.full.pdf+html)
-estimated the incubation period based on 34 early nCoV cases that
+estimated the incubation period based on 88 early nCoV cases that
 traveled from Wuhan to other regions in China. [Li *et
 al*](https://www.nejm.org/doi/full/10.1056/NEJMoa2001316) estimated the
 incubation period based on the 10 laboratory-confirmed cases in Wuhan. A

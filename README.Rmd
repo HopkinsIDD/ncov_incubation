@@ -17,7 +17,6 @@ library(tidyverse)
 library(lubridate)
 library(coarseDataTools)
 library(gridExtra)
-library(rstan)
 cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
 set.seed(1)
@@ -502,7 +501,7 @@ Somewhat surprisingly, this changes the estimates less than either of the other 
 
 ## Comparison to other estimates
 
-[Backer, Klinkenberg, & Wallinga](https://www.medrxiv.org/content/10.1101/2020.01.27.20018986v1.full.pdf+html) estimated the incubation period based on 34 early nCoV cases that traveled from Wuhan to other regions in China.
+[Backer, Klinkenberg, & Wallinga](https://www.medrxiv.org/content/10.1101/2020.01.27.20018986v1.full.pdf+html) estimated the incubation period based on 88 early nCoV cases that traveled from Wuhan to other regions in China.
 [Li *et al*](https://www.nejm.org/doi/full/10.1056/NEJMoa2001316) estimated the incubation period based on the 10 laboratory-confirmed cases in Wuhan.
 A comparison of our incubation periods are shown below:
 
