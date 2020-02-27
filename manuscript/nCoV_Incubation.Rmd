@@ -168,14 +168,27 @@ summary(ncov$age.mid)
 
 ## mainland China vs non mainland
 ncov <- ncov %>% 
-        mutate(mlChina=ifelse(COUNTRY.DEST=="China" & !PROVINCE.DEST%in%c("Hong Kong", "Macau"),1,0))
+        mutate(mlChina=ifelse(COUNTRY.DEST=="China" &
+                                  !PROVINCE.DEST%in%c("Hong Kong", "Macau"),1,0))
+table(ncov$mlChina)
 
 ## Regions within mainland China
-ncov %>% filter(mlChina==1) %>% group_by(PROVINCE.DEST) %>% summarise(ncases=n()) %>% arrange(desc(ncases))
+ncov %>%
+    filter(mlChina==1) %>%
+    group_by(PROVINCE.DEST) %>%
+    summarise(ncases=n()) %>%
+    arrange(desc(ncases))
 
 ## Countries + regions outside of mainland China
-ncov %>% filter(mlChina==0) %>% group_by(COUNTRY.DEST) %>% summarise(ncases=n()) %>% arrange(desc(ncases))
-ncov %>% filter(mlChina==0 & COUNTRY.DEST=="China") %>% group_by(PROVINCE.DEST) %>% summarise(ncases=n()) %>% arrange(desc(ncases))
+ncov %>% filter(mlChina==0) %>%
+    group_by(COUNTRY.DEST) %>%
+    summarise(ncases=n()) %>%
+    arrange(desc(ncases))
+ncov %>%
+    filter(mlChina==0 & COUNTRY.DEST=="China") %>%
+    group_by(PROVINCE.DEST) %>%
+    summarise(ncases=n()) %>%
+    arrange(desc(ncases))
 
 ## Wuhan exposure
 ncov$WUHAN_EXP <- if_else(ncov$WUHAN_RESIDENT%in%c("Yes", "Hubei") | ncov$WUHAN_VISITED=="Yes", 1, 0) 
@@ -349,14 +362,38 @@ ncov_el_fit_boot <- dic.fit(ncov_el_dic,dist="L", n.boots=1000,
 
 ```
 
-```{r el-dic-plots, eval=F}
+```{r el-dic-plots, eval=T}
 ## plot the boot fit and table of intervals
-plot(ncov_mainland_fit_boot, main="non-mainland results")
+plot(ncov_el_fit_boot, main="EL-only results")
 
-mainland_tbl <- ncov_mainland_fit_boot@ests[-c(1:2),-4] %>% 
+el_tbl <- ncov_el_fit_boot@ests[-c(1:2),-4] %>% 
     as.data.frame()
-mainland_tbl$diff <- ncov_mainland_fit_boot@ests[-c(1:2), "est"] - ncov_inc_fit_boot@ests[-c(1:2), "est"]
-knitr::kable(mainland_tbl)
+el_tbl$diff <- ncov_el_fit_boot@ests[-c(1:2), "est"] - ncov_inc_fit_boot@ests[-c(1:2), "est"]
+knitr::kable(el_tbl)
+
+```
+
+```{r fit-el-zero-dics, results='hide', cache=T}
+set.seed(1)
+ncov_el_zero_dic <- ncov %>% 
+    select(EL, ER, SL, SR) %>% 
+    mutate(type=0,
+           EL=0) %>% 
+    as.data.frame()
+
+ncov_el_zero_fit_boot <- dic.fit(ncov_el_zero_dic,dist="L",# n.boots=1000,
+                            ptiles = c(0.025, 0.25, 0.5, 0.75, 0.975))
+
+```
+
+```{r el-zero-dic-plots, eval=T}
+## plot the boot fit and table of intervals
+plot(ncov_el_zero_fit_boot, main="EL-zero results")
+
+el_zero_tbl <- ncov_el_zero_fit_boot@ests[-c(1:2),-4] %>% 
+    as.data.frame()
+el_zero_tbl$diff <- ncov_el_zero_fit_boot@ests[-c(1:2), "est"] - ncov_inc_fit_boot@ests[-c(1:2), "est"]
+knitr::kable(el_zero_tbl)
 
 ```
 

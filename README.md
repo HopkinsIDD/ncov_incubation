@@ -1,12 +1,12 @@
-[![DOI](https://zenodo.org/badge/216109073.svg)](https://zenodo.org/badge/latestdoi/216109073)
+[![DOI](https://zenodo.org/badge/236349745.svg)](https://zenodo.org/badge/latestdoi/236349745)
 
 Real-time estimation of the novel coronavirus incubation time
 =============================================================
 
-Updated: Tue Feb 11 11:59:19 2020
+Updated: Thu Feb 27 16:26:31 2020
 
 [Read the medRxiv
-preprint!](https://www.medrxiv.org/content/10.1101/2020.02.02.20020016v1)
+preprint](https://www.medrxiv.org/content/10.1101/2020.02.02.20020016v1)
 
 Our lab has been collecting data (freely available at
 [`data/nCoV-IDD-traveler-data.csv`](https://github.com/HopkinsIDD/ncov_incubation/blob/master/data/nCoV-IDD-traveler-data.csv))
@@ -36,11 +36,11 @@ Quick links:
 Data summary
 ------------
 
-There are 101 cases from 38 countries and provinces outside of Hubei,
-China. Of those 34 are known to be female (34%) and 63 are male (62%).
-The median age is about 52 years (IQR: 36.5-59). 29 cases are from
-Mainland China (29%), while 72 are from the rest of the world (71%). 61
-cases presented with a fever (60%).
+There are 175 cases from 48 countries and provinces outside of Hubei,
+China. Of those 64 are known to be female (37%) and 107 are male (61%).
+The median age is about 44.5 years (IQR: 34-55). 76 cases are from
+Mainland China (43%), while 99 are from the rest of the world (57%). 98
+cases presented with a fever (56%).
 
 <img src="README_files/figure-markdown_strict/data-summary-1.png" alt="This figure displays the exposure and symptom onset windows for each case in our dataset, relative to the right-bound of the exposure window (ER). The blue bars indicate the the exposure windows and the red bars indicate the symptom onset windows for each case. Purple areas are where those two bars overlap."  />
 <p class="caption">
@@ -75,7 +75,7 @@ we make the following assumptions:
 -   For cases without an SL, we use the EL
 
 Under these assumptions, the median exposure interval was 49 (range:
-1-58.8) and the median symptom onset interval was 1 (range: 0-58.8).
+1-81.8) and the median symptom onset interval was 1 (range: 0-81.8).
 
 Incubation period estimates
 ---------------------------
@@ -103,68 +103,68 @@ The first model we fit is to all of the data and output the median,
 <tbody>
 <tr class="odd">
 <td>meanlog</td>
-<td style="text-align: right;">1.644</td>
-<td style="text-align: right;">1.495</td>
-<td style="text-align: right;">1.798</td>
+<td style="text-align: right;">1.648</td>
+<td style="text-align: right;">1.537</td>
+<td style="text-align: right;">1.778</td>
 </tr>
 <tr class="even">
 <td>sdlog</td>
-<td style="text-align: right;">0.363</td>
-<td style="text-align: right;">0.201</td>
-<td style="text-align: right;">0.521</td>
+<td style="text-align: right;">0.399</td>
+<td style="text-align: right;">0.249</td>
+<td style="text-align: right;">0.529</td>
 </tr>
 <tr class="odd">
 <td>p2.5</td>
-<td style="text-align: right;">2.542</td>
-<td style="text-align: right;">1.829</td>
-<td style="text-align: right;">3.564</td>
+<td style="text-align: right;">2.378</td>
+<td style="text-align: right;">1.854</td>
+<td style="text-align: right;">3.127</td>
 </tr>
 <tr class="even">
 <td>p5</td>
-<td style="text-align: right;">2.850</td>
-<td style="text-align: right;">2.153</td>
-<td style="text-align: right;">3.849</td>
+<td style="text-align: right;">2.697</td>
+<td style="text-align: right;">2.180</td>
+<td style="text-align: right;">3.403</td>
 </tr>
 <tr class="odd">
 <td>p25</td>
-<td style="text-align: right;">4.052</td>
-<td style="text-align: right;">3.411</td>
-<td style="text-align: right;">4.859</td>
+<td style="text-align: right;">3.971</td>
+<td style="text-align: right;">3.517</td>
+<td style="text-align: right;">4.534</td>
 </tr>
 <tr class="even">
 <td>p50</td>
-<td style="text-align: right;">5.174</td>
-<td style="text-align: right;">4.460</td>
-<td style="text-align: right;">6.037</td>
+<td style="text-align: right;">5.197</td>
+<td style="text-align: right;">4.649</td>
+<td style="text-align: right;">5.918</td>
 </tr>
 <tr class="odd">
 <td>p75</td>
-<td style="text-align: right;">6.608</td>
-<td style="text-align: right;">5.474</td>
-<td style="text-align: right;">8.062</td>
+<td style="text-align: right;">6.802</td>
+<td style="text-align: right;">5.721</td>
+<td style="text-align: right;">8.177</td>
 </tr>
 <tr class="even">
 <td>p95</td>
-<td style="text-align: right;">9.394</td>
-<td style="text-align: right;">6.887</td>
-<td style="text-align: right;">12.844</td>
+<td style="text-align: right;">10.017</td>
+<td style="text-align: right;">7.440</td>
+<td style="text-align: right;">13.315</td>
 </tr>
 <tr class="odd">
 <td>p97.5</td>
-<td style="text-align: right;">10.531</td>
-<td style="text-align: right;">7.381</td>
-<td style="text-align: right;">15.051</td>
+<td style="text-align: right;">11.358</td>
+<td style="text-align: right;">8.058</td>
+<td style="text-align: right;">15.688</td>
 </tr>
 </tbody>
 </table>
 
-The median incubation period lasts 5.174 days (CI: 4.46-6.037). The 2.5%
-of incubation periods pass in less than 2.542 days (CI: 1.829-3.564),
-while 97.5% of the population would experience symptoms by 10.531 days
-(CI: 7.381-15.051) since their exposure. The ‘meanlog’ and ‘sdlog’
-estimates are the median and dispersion parameters for a LogNormal
-distribution; i.e. we recommend using a LogNormal(1.644, 0.363)
-distribution to appropriately represent the incubation time
+The median incubation period lasts 5.197 days (CI: 4.649-5.918). The
+2.5% of incubation periods pass in less than 2.378 days (CI:
+1.854-3.127), while 97.5% of the population would experience symptoms by
+11.358 days (CI: 8.058-15.688) since their exposure. The ‘meanlog’ and
+‘sdlog’ estimates are the median and dispersion parameters for a
+LogNormal distribution; i.e. we recommend using a LogNormal(1.648,
+0.399) distribution to appropriately represent the incubation time
 distribution.
 
 Alternate estimates and sensitivity analyses
@@ -182,15 +182,15 @@ the Weibull distribution has a slightly smaller value at the 2.5th
 percentile and the log-normal distribution has a slightly larger value
 at the 97.5th percentile. The log-likelihoods were very similar between
 distributions; the log-normal distribution having the largest
-log-likelihood (62.05) and the Erlang distribution having the smallest
-log-likelihood (60.96).
+log-likelihood (57.88) and the Weibull distribution having the smallest
+log-likelihood (54.53).
 
-The gamma distribution has an estimated shape parameter of 7.92 (95% CI:
-3.97-24.98) and a scale parameter of 0.69 (95% CI: 0.21-1.52). The
-Weibull distribution has an estimated shape parameter of 3.11 (95% CI:
-2.2-6.08) and a scale parameter of 6.11 (95% CI: 5.19-7.25). The Erlang
-distribution has an estimated shape parameter of 14 (95% CI: 5-21) and a
-scale parameter of 0.4 (95% CI: 0.26-1.11).
+The gamma distribution has an estimated shape parameter of 6.34 (95% CI:
+3.82-16.17) and a scale parameter of 0.89 (95% CI: 0.32-1.63). The
+Weibull distribution has an estimated shape parameter of 2.55 (95% CI:
+1.99-4.42) and a scale parameter of 6.38 (95% CI: 5.43-7.51). The Erlang
+distribution has an estimated shape parameter of 7 (95% CI: 4-10) and a
+scale parameter of 0.82 (95% CI: 0.57-1.58).
 
 ### Sensitivity analyses
 
@@ -208,20 +208,20 @@ setting unknown ELs to 2018 December 1.
 
 <img src="README_files/figure-markdown_strict/all-sens-plot-1.png" style="display: block; margin: auto;" />
 
-Using only fevers, the estimates are 0.377 to 0.854 days longer than the
-estimates on the full data. 8 of the cases with a fever reported having
+Using only fevers, the estimates are 0.259 to 1.173 days longer than the
+estimates on the full data. 12 of the cases with a fever reported having
 other symptoms beforehand. While it may take a little longer for an
 exposure to cause a fever, the estimates are similar to those of the
 overall results. The confidence intervals are wider here at every
 quantile due to having less data.
 
 Using only cases from outside of Mainland China, the estimates are
--0.078 to 1.92 days longer than the estimates on the full data. There is
-a bit of a gap on the long end of the tail, but the confidence intervals
-overlap for the most part.
+-0.096 to 2.984 days longer than the estimates on the full data. There
+is a bit of a gap on the long end of the tail, but the confidence
+intervals overlap for the most part.
 
 When we set the unknown ELs to 2018 December 1 instead of 2019 December
-1, the estimates are -0.002 to 0.366 days longer than the estimates on
+1, the estimates are 0.005 to 0.248 days longer than the estimates on
 the full data. Somewhat surprisingly, this changes the estimates less
 than either of the other alternate estimates.
 
@@ -268,30 +268,30 @@ distributions.
 <tr class="odd">
 <td style="text-align: left;">JHU-IDD</td>
 <td style="text-align: center;">log-normal</td>
-<td style="text-align: right;">101</td>
-<td style="text-align: right;">1.64</td>
-<td style="text-align: right;">0.36</td>
+<td style="text-align: right;">175</td>
+<td style="text-align: right;">1.65</td>
+<td style="text-align: right;">0.40</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">JHU-IDD</td>
 <td style="text-align: center;">gamma</td>
-<td style="text-align: right;">101</td>
-<td style="text-align: right;">7.92</td>
-<td style="text-align: right;">0.69</td>
+<td style="text-align: right;">175</td>
+<td style="text-align: right;">6.34</td>
+<td style="text-align: right;">0.89</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">JHU-IDD</td>
 <td style="text-align: center;">Weibull</td>
-<td style="text-align: right;">101</td>
-<td style="text-align: right;">3.11</td>
-<td style="text-align: right;">6.11</td>
+<td style="text-align: right;">175</td>
+<td style="text-align: right;">2.55</td>
+<td style="text-align: right;">6.38</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">JHU-IDD</td>
 <td style="text-align: center;">Erlang</td>
-<td style="text-align: right;">101</td>
-<td style="text-align: right;">14.00</td>
-<td style="text-align: right;">0.40</td>
+<td style="text-align: right;">175</td>
+<td style="text-align: right;">7.00</td>
+<td style="text-align: right;">0.82</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">Backer 2020</td>
@@ -350,30 +350,30 @@ infection), ‘medium risk’ (1/1,000), ‘high risk’ (1/100), and ‘infecte
 <tr class="odd">
 <td style="text-align: left;">7 days</td>
 <td style="text-align: left;">0.2 (0.4)</td>
-<td style="text-align: left;">2.0 (3.9)</td>
-<td style="text-align: left;">19.7 (39.4)</td>
-<td style="text-align: left;">1971.5 (3940.2)</td>
+<td style="text-align: left;">2.2 (3.9)</td>
+<td style="text-align: left;">22.4 (39.0)</td>
+<td style="text-align: left;">2244.2 (3903.8)</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">14 days</td>
-<td style="text-align: left;">0.0 (0.0)</td>
-<td style="text-align: left;">0.1 (0.4)</td>
-<td style="text-align: left;">0.6 (4.5)</td>
-<td style="text-align: left;">64.4 (449.6)</td>
+<td style="text-align: left;">0.0 (0.1)</td>
+<td style="text-align: left;">0.1 (0.5)</td>
+<td style="text-align: left;">1.0 (5.1)</td>
+<td style="text-align: left;">101.8 (508.0)</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">21 days</td>
 <td style="text-align: left;">0.0 (0.0)</td>
 <td style="text-align: left;">0.0 (0.1)</td>
-<td style="text-align: left;">0.1 (0.8)</td>
-<td style="text-align: left;">5.3 (75.3)</td>
+<td style="text-align: left;">0.1 (0.9)</td>
+<td style="text-align: left;">9.1 (85.4)</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">28 days</td>
 <td style="text-align: left;">0.0 (0.0)</td>
 <td style="text-align: left;">0.0 (0.0)</td>
 <td style="text-align: left;">0.0 (0.2)</td>
-<td style="text-align: left;">0.8 (17.0)</td>
+<td style="text-align: left;">1.3 (18.3)</td>
 </tr>
 </tbody>
 </table>
@@ -395,8 +395,8 @@ and the red bars indicate the hospitalization windows for each case.
 Purple areas are where those two bars overlap.
 </p>
 
-Of the 93 individuals who developed symptoms in the community (as
-opposed to in isolation), 26 (28%) were hospitalized within a day.
+Of the 168 individuals who developed symptoms in the community (as
+opposed to in isolation), 55 (33%) were hospitalized within a day.
 
 We modeled the time to hospitalization as a gamma distribution:
 
@@ -414,49 +414,49 @@ We modeled the time to hospitalization as a gamma distribution:
 <tbody>
 <tr class="odd">
 <td>shape</td>
-<td style="text-align: right;">0.444</td>
-<td style="text-align: right;">0.290</td>
-<td style="text-align: right;">0.691</td>
+<td style="text-align: right;">0.403</td>
+<td style="text-align: right;">0.294</td>
+<td style="text-align: right;">0.535</td>
 </tr>
 <tr class="even">
 <td>scale</td>
-<td style="text-align: right;">3.761</td>
-<td style="text-align: right;">2.325</td>
-<td style="text-align: right;">5.489</td>
+<td style="text-align: right;">4.624</td>
+<td style="text-align: right;">3.368</td>
+<td style="text-align: right;">6.231</td>
 </tr>
 <tr class="odd">
 <td>p2.5</td>
-<td style="text-align: right;">0.001</td>
 <td style="text-align: right;">0.000</td>
-<td style="text-align: right;">0.011</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">0.003</td>
 </tr>
 <tr class="even">
 <td>p25</td>
-<td style="text-align: right;">0.129</td>
-<td style="text-align: right;">0.027</td>
-<td style="text-align: right;">0.344</td>
+<td style="text-align: right;">0.112</td>
+<td style="text-align: right;">0.034</td>
+<td style="text-align: right;">0.239</td>
 </tr>
 <tr class="odd">
 <td>p50</td>
-<td style="text-align: right;">0.680</td>
-<td style="text-align: right;">0.297</td>
-<td style="text-align: right;">1.150</td>
+<td style="text-align: right;">0.682</td>
+<td style="text-align: right;">0.382</td>
+<td style="text-align: right;">1.024</td>
 </tr>
 <tr class="even">
 <td>p75</td>
-<td style="text-align: right;">2.163</td>
-<td style="text-align: right;">1.384</td>
-<td style="text-align: right;">2.922</td>
+<td style="text-align: right;">2.356</td>
+<td style="text-align: right;">1.772</td>
+<td style="text-align: right;">3.023</td>
 </tr>
 <tr class="odd">
 <td>p97.5</td>
-<td style="text-align: right;">8.860</td>
-<td style="text-align: right;">6.323</td>
-<td style="text-align: right;">11.345</td>
+<td style="text-align: right;">10.329</td>
+<td style="text-align: right;">8.131</td>
+<td style="text-align: right;">12.527</td>
 </tr>
 </tbody>
 </table>
 
-The model estimates that time to hospitalization is 1.7 days, on
+The model estimates that time to hospitalization is 1.9 days, on
 average. The majority of cases report quickly, though there is a long
 tail.

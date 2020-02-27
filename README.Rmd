@@ -4,7 +4,7 @@ output: md_document
 editor_options: 
   chunk_output_type: console
 ---
-[![DOI](https://zenodo.org/badge/216109073.svg)](https://zenodo.org/badge/latestdoi/216109073)
+[![DOI](https://zenodo.org/badge/236349745.svg)](https://zenodo.org/badge/latestdoi/236349745)
 
 ```{r opts, include=FALSE}
 knitr::opts_knit$set(root.dir = here::here())
@@ -38,40 +38,42 @@ ncov <- read_csv("data/nCoV-IDD-traveler-data.csv") %>%
            # SR_fever is only for cases with confirmed fever dates
            SR_fever=ymd_hms(SR_fever)) %>% 
     # if ER is missing, use SR; if SL is missing, use EL
-    mutate(ER_date=if_else(is.na(ER_date), SR_date, ymd_hms(ER_date)),
-           SL_date=if_else(is.na(SL_date), EL_date, ymd_hms(SL_date)),
-           SL_fever= if_else(is.na(SL_fever) & !is.na(SR_fever), 
-                             SL_date,
-                             ymd_hms(SL_fever))) %>% 
+        mutate(ER_date=if_else(is.na(ER_date), SR_date, ymd_hms(ER_date)),
+               ER_date=if_else(ER_date>SR_date, SR_date, ER_date),
+               SL_date=if_else(is.na(SL_date), EL_date, ymd_hms(SL_date)),
+               SL_date=if_else(SL_date<EL_date, EL_date, SL_date),
+               SL_fever=if_else(is.na(SL_fever) & !is.na(SR_fever),
+                                 SL_date, ymd_hms(SL_fever)),
+               SL_fever=if_else(SL_fever<EL_date, EL_date, SL_fever)) %>% 
     # calculate days since 1 Dec 2019
-    mutate(EL=difftime(EL_date, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
-               as.numeric(),
-           ER=difftime(ER_date, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
-               as.numeric(),
-           SL=difftime(SL_date, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
-               as.numeric(),
-           SR=difftime(SR_date, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
-               as.numeric(),
-           SL_fever=difftime(SL_fever,
-                             ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
-               as.numeric(),
-           SR_fever=difftime(SR_fever,
-                             ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
-               as.numeric(),
-           PL=difftime(PL, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
-               as.numeric(),
-           PR=difftime(PR, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
-               as.numeric(),
-           E_int=ER-EL,
-           S_int=SR-SL,
-           S_fever_int=SR_fever-SL_fever) %>% 
+        mutate(EL=difftime(EL_date, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+                  as.numeric(),
+               ER=difftime(ER_date, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+                   as.numeric(),
+               SL=difftime(SL_date, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+                   as.numeric(),
+               SR=difftime(SR_date, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+                   as.numeric(),
+               SL_fever=difftime(SL_fever, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+                   as.numeric(),
+               SR_fever=difftime(SR_fever, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+                   as.numeric(),
+              PL=difftime(PL, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+                  as.numeric(),
+              PR=difftime(PR, ymd_hms("2019-12-01 00:00:00"), units="days") %>% 
+                  as.numeric(),
+              E_int=ER-EL,
+              S_int=SR-SL,
+              S_fever_int=SR_fever-SL_fever,
+              max_inc_int=SR-EL,
+              min_inc_int=SL-ER) %>% 
     # remove any entries missing EL, ER, SL, or SR
-    filter(!is.na(EL_date), !is.na(ER_date), !is.na(SL_date), !is.na(SR_date)) %>% 
+        filter(!is.na(EL_date), !is.na(ER_date), !is.na(SL_date), !is.na(SR_date)) %>% 
     # remove entries that haven't been reviewed by two people
-    filter(!is.na(REVIEWER2)) %>% 
+        filter(!is.na(REVIEWER2), REVIEWER2!="NA") %>% 
     # remove entries with exposure/onset intervals less than 0
     # remove entries where ER greater than SR or EL greater than SL
-    filter(E_int > 0, S_int > 0, ER<=SR, SL>=EL)
+        filter(E_int > 0, S_int > 0, ER<=SR, SL>=EL)
 
 ## Now lets divide data sets by observation type
 ## only fevers
@@ -203,7 +205,8 @@ knitr::kable(foreign_tbl)
 set.seed(1)
 ## change dates to restrict exposure to after December 1
 ## add times where missing
-ncov_year_dic <- ncov_raw %>% 
+ncov_year_dic <- read_csv("data/nCoV-IDD-traveler-data.csv") %>% 
+    rename(EL_date=EL, ER_date=ER, SL_date=SL, SR_date=SR) %>% 
     # if EL is missing or before 1 Dec 2018, use 1 Dec 2018
     mutate(EL_date=ifelse(is.na(EL_date),"2018-12-01 00:00:00", EL_date) %>% 
                ymd_hms() %>% 
@@ -272,7 +275,7 @@ knitr::kable(year_tbl)
 
 Updated: `r date()`
 
-[Read the medRxiv preprint!](https://www.medrxiv.org/content/10.1101/2020.02.02.20020016v1)
+[Read the medRxiv preprint](https://www.medrxiv.org/content/10.1101/2020.02.02.20020016v1)
 
 Our lab has been collecting data (freely available at [`data/nCoV-IDD-traveler-data.csv`](https://github.com/HopkinsIDD/ncov_incubation/blob/master/data/nCoV-IDD-traveler-data.csv)) on the exposure and symptom onset for novel coronavirus (nCoV-2019) cases that have been confirmed outside of the Hubei province.
 These cases have been confirmed either in other countries or in regions of China with no known local transmission.
