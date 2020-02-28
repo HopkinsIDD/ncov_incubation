@@ -3,7 +3,7 @@
 Real-time estimation of the novel coronavirus incubation time
 =============================================================
 
-Updated: Thu Feb 27 16:26:31 2020
+Updated: Thu Feb 27 19:18:17 2020
 
 [Read the medRxiv
 preprint](https://www.medrxiv.org/content/10.1101/2020.02.02.20020016v1)
@@ -36,11 +36,11 @@ Quick links:
 Data summary
 ------------
 
-There are 175 cases from 48 countries and provinces outside of Hubei,
-China. Of those 64 are known to be female (37%) and 107 are male (61%).
-The median age is about 44.5 years (IQR: 34-55). 76 cases are from
-Mainland China (43%), while 99 are from the rest of the world (57%). 98
-cases presented with a fever (56%).
+There are 181 cases from 49 countries and provinces outside of Hubei,
+China. Of those 69 are known to be female (38%) and 108 are male (60%).
+The median age is about 44.5 years (IQR: 34-55.5). 81 cases are from
+Mainland China (45%), while 100 are from the rest of the world (55%). 99
+cases presented with a fever (55%).
 
 <img src="README_files/figure-markdown_strict/data-summary-1.png" alt="This figure displays the exposure and symptom onset windows for each case in our dataset, relative to the right-bound of the exposure window (ER). The blue bars indicate the the exposure windows and the red bars indicate the symptom onset windows for each case. Purple areas are where those two bars overlap."  />
 <p class="caption">
@@ -268,28 +268,28 @@ distributions.
 <tr class="odd">
 <td style="text-align: left;">JHU-IDD</td>
 <td style="text-align: center;">log-normal</td>
-<td style="text-align: right;">175</td>
+<td style="text-align: right;">181</td>
 <td style="text-align: right;">1.65</td>
 <td style="text-align: right;">0.40</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">JHU-IDD</td>
 <td style="text-align: center;">gamma</td>
-<td style="text-align: right;">175</td>
+<td style="text-align: right;">181</td>
 <td style="text-align: right;">6.34</td>
 <td style="text-align: right;">0.89</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">JHU-IDD</td>
 <td style="text-align: center;">Weibull</td>
-<td style="text-align: right;">175</td>
+<td style="text-align: right;">181</td>
 <td style="text-align: right;">2.55</td>
 <td style="text-align: right;">6.38</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">JHU-IDD</td>
 <td style="text-align: center;">Erlang</td>
-<td style="text-align: right;">175</td>
+<td style="text-align: right;">181</td>
 <td style="text-align: right;">7.00</td>
 <td style="text-align: right;">0.82</td>
 </tr>
