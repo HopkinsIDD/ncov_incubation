@@ -36,7 +36,7 @@ cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2"
 set.seed(1)
 
 ## read in coronavirus data
-ncov_raw <- read_csv("../data/nCoV-IDD-traveler-data.csv") %>% 
+ncov_raw <- read_csv("data/nCoV-IDD-traveler-data.csv") %>% 
             rename(EL_date=EL, ER_date=ER, SL_date=SL, SR_date=SR)
 
 ## change dates to restrict exposure to after 1 December 2019
@@ -142,7 +142,8 @@ ncov_EL <- ncov_raw %>%
            E_int=ER-EL,
            S_int=SR-SL,
            S_fever_int=SR_fever-SL_fever,
-           max_inc_int=SR-EL) %>% 
+           max_inc_int=SR-EL,
+           min_inc_int=SL-ER) %>% 
     # remove any entries missing EL, ER, SL, or SR
     filter(!is.na(EL_date), !is.na(ER_date), !is.na(SL_date), !is.na(SR_date)) %>% 
     # remove entries that haven't been reviewed by two people
@@ -287,7 +288,7 @@ ncov_wei_fit_boot <- dic.fit(ncov_inc_dat,dist="W", n.boots=1000,
 set.seed(1)
 
 #fit it...use bootstrap interstions for now. MCMC better?
-ncov_erl_fit <- dic.fit.mcmc(ncov_inc_dat,dist="E",
+ncov_erl_fit <- dic.fit.mcmc(ncov_inc_dat,dist="E",n.samples=1e4, burnin=5000,
                              ptiles = c(0.025, 0.25, 0.5, 0.75, 0.975))
 ```
 
@@ -349,7 +350,7 @@ ncov_mainland_fit_boot <- dic.fit(ncov_mainland_dic,dist="L", n.boots=1000,
 
 ```{r mainland-dic-plots, eval=T}
 ## plot the boot fit and table of intervals
-plot(ncov_mainland_fit_boot, main="non-mainland results")
+plot(ncov_mainland_fit_boot, main="mainland results")
 
 mainland_tbl <- ncov_mainland_fit_boot@ests[-c(1:2),-4] %>% 
     as.data.frame()
@@ -381,6 +382,54 @@ knitr::kable(el_tbl)
 
 ```
 
+```{r fit-no-long-mins-dics, results='hide', cache=T}
+set.seed(1)
+ncov_no_long_min_dic <- ncov %>% 
+    filter(min_inc_int<5) %>% 
+    select(EL, ER, SL, SR) %>% 
+    mutate(type=0) %>% 
+    as.data.frame()
+
+ncov_no_long_min_fit_boot <- dic.fit(ncov_no_long_min_dic,dist="L", n.boots=1000,
+                            ptiles = c(0.025, 0.25, 0.5, 0.75, 0.975))
+
+```
+
+```{r no-long-min-dic-plots, eval=T}
+## plot the boot fit and table of intervals
+plot(ncov_no_long_min_fit_boot, main="excluding long minimums results")
+
+nlm_tbl <- ncov_no_long_min_fit_boot@ests[-c(1:2),-4] %>% 
+    as.data.frame()
+nlm_tbl$diff <- ncov_no_long_min_fit_boot@ests[-c(1:2), "est"] - ncov_inc_fit_boot@ests[-c(1:2), "est"]
+knitr::kable(nlm_tbl)
+
+```
+
+```{r el-zero-dics, results='hide', cache=T, eval=F}
+set.seed(1)
+ncov_el_zero_dic <- ncov %>% 
+    select(EL, ER, SL, SR) %>% 
+    mutate(type=1,
+           EL=0) %>% 
+    as.data.frame()
+
+ncov_el_zero_fit_boot <- dic.fit(ncov_el_zero_dic,dist="L", n.boots=1000,
+                            ptiles = c(0.025, 0.25, 0.5, 0.75, 0.975))
+
+```
+
+```{r el-zero-dic-plots, eval=F}
+## plot the boot fit and table of intervals
+plot(ncov_el_zero_fit_boot, main="EL-zero results")
+
+fix_so_tbl <- ncov_el_zero_fit_boot@ests[-c(1:2),-4] %>% 
+    as.data.frame()
+fix_so_tbl$diff <- ncov_el_zero_fit_boot@ests[-c(1:2), "est"] - ncov_inc_fit_boot@ests[-c(1:2), "est"]
+knitr::kable(fix_so_tbl)
+
+```
+
 ```{r fit-fixed-symptom-onset-dics, results='hide', cache=T}
 set.seed(1)
 ncov_fix_so_dic <- ncov %>% 
@@ -394,14 +443,14 @@ ncov_fix_so_fit_boot <- dic.fit(ncov_fix_so_dic,dist="L", n.boots=1000,
 
 ```
 
-```{r el-zero-dic-plots, eval=T}
+```{r fix-so-dic-plots, eval=T}
 ## plot the boot fit and table of intervals
-plot(ncov_el_zero_fit_boot, main="EL-zero results")
+plot(ncov_fix_so_fit_boot, main="fixed symptom onset results")
 
-el_zero_tbl <- ncov_el_zero_fit_boot@ests[-c(1:2),-4] %>% 
+fix_so_tbl <- ncov_fix_so_fit_boot@ests[-c(1:2),-4] %>% 
     as.data.frame()
-el_zero_tbl$diff <- ncov_el_zero_fit_boot@ests[-c(1:2), "est"] - ncov_inc_fit_boot@ests[-c(1:2), "est"]
-knitr::kable(el_zero_tbl)
+fix_so_tbl$diff <- ncov_fix_so_fit_boot@ests[-c(1:2), "est"] - ncov_inc_fit_boot@ests[-c(1:2), "est"]
+knitr::kable(fix_so_tbl)
 
 ```
 
