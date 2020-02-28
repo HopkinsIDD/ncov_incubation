@@ -296,7 +296,7 @@ ncov_fever_fit_boot <- dic.fit(ncov_fever_dic,dist="L", n.boots=1000,
                                ptiles = c(0.025, 0.25, 0.5, 0.75, 0.975))
 ```
 
-```{r fever-dic-plots, eval=F}
+```{r fever-dic-plots, eval=T}
 ## plot the boot fit and table of intervals
 plot(ncov_fever_fit_boot, main="fever-only results")
 
@@ -317,7 +317,7 @@ ncov_foreign_fit_boot <- dic.fit(ncov_foreign_dic,dist="L", n.boots=1000,
                                  ptiles = c(0.025, 0.25, 0.5, 0.75, 0.975))
 ```
 
-```{r foreign-dic-plots, eval=F}
+```{r foreign-dic-plots, eval=T}
 ## plot the boot fit and table of intervals
 plot(ncov_foreign_fit_boot, main="non-mainland results")
 
@@ -339,7 +339,7 @@ ncov_mainland_fit_boot <- dic.fit(ncov_mainland_dic,dist="L", n.boots=1000,
 
 ```
 
-```{r mainland-dic-plots, eval=F}
+```{r mainland-dic-plots, eval=T}
 ## plot the boot fit and table of intervals
 plot(ncov_mainland_fit_boot, main="non-mainland results")
 
@@ -373,15 +373,15 @@ knitr::kable(el_tbl)
 
 ```
 
-```{r fit-el-zero-dics, results='hide', cache=T}
+```{r fit-fixed-symptom-onset-dics, results='hide', cache=T}
 set.seed(1)
-ncov_el_zero_dic <- ncov %>% 
+ncov_fix_so_dic <- ncov %>% 
     select(EL, ER, SL, SR) %>% 
-    mutate(type=0,
-           EL=0) %>% 
+    mutate(type=1,
+           SL=SR) %>% 
     as.data.frame()
 
-ncov_el_zero_fit_boot <- dic.fit(ncov_el_zero_dic,dist="L",# n.boots=1000,
+ncov_fix_so_fit_boot <- dic.fit(ncov_fix_so_dic,dist="L", n.boots=1000,
                             ptiles = c(0.025, 0.25, 0.5, 0.75, 0.975))
 
 ```
@@ -452,7 +452,7 @@ ncov_year_fit_boot <- dic.fit(ncov_year_dic,dist="L", n.boots=1000,
                               ptiles = c(0.025, 0.25, 0.5, 0.75, 0.975))
 ```
 
-```{r year-dic-plots, eval=F}
+```{r year-dic-plots, eval=T}
 ## plot the boot fit and table of intervals
 plot(ncov_year_fit_boot, main="EL-2018 results")
 
