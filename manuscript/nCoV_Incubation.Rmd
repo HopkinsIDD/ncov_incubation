@@ -36,7 +36,7 @@ cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2"
 set.seed(1)
 
 ## read in coronavirus data
-ncov_raw <- read_csv("data/nCoV-IDD-traveler-data.csv") %>% 
+ncov_raw <- read_csv("../data/nCoV-IDD-traveler-data.csv") %>% 
             rename(EL_date=EL, ER_date=ER, SL_date=SL, SR_date=SR)
 
 ## change dates to restrict exposure to after 1 December 2019
@@ -158,9 +158,8 @@ ncov_EL <- ncov_raw %>%
 ```{r data-summary, echo=FALSE, message=FALSE, warning=FALSE}
 
 ## sex distribution
-table(ncov$SEX)
-prop.table(table(ncov$SEX))
-sum(is.na(ncov$SEX))
+table(ncov$SEX, useNA = 'a')
+prop.table(table(ncov$SEX, useNA = 'a'))
 
 ## age distribution
 ncov$age.mid <- (ncov$AGEL + ncov$AGER)/2
@@ -192,7 +191,9 @@ ncov %>%
 
 ## Wuhan exposure
 ncov$WUHAN_EXP <- if_else(ncov$WUHAN_RESIDENT%in%c("Yes", "Hubei") | ncov$WUHAN_VISITED=="Yes", 1, 0) 
-table(ncov$WUHAN_EXP)
+table(ncov$WUHAN_EXP, useNA='a')
+table(ncov$WUHAN_RESIDENT)
+table(ncov$WUHAN_VISITED)
 
 ## Median time from symptom onset to hospitalization
 ncov %>% mutate(Smid = (SL + SR)/2,
@@ -214,6 +215,9 @@ dat_sum <- ncov %>%
            SLnew = SL-ER,
            SRnew = SR-ER,
            Smid = (SLnew + SRnew)/2,
+           PLnew = PL-ER,
+           PRnew = PR-ER,
+           Pmid = (PLnew + PRnew)/2,
            UID=reorder(UID, SR-EL))
 
 ggplot(dat_sum, aes(y=factor(UID))) + 
@@ -221,8 +225,11 @@ ggplot(dat_sum, aes(y=factor(UID))) +
                  color="#0072B2", size=2, alpha=.25) +
     geom_segment(aes(x=SLnew, xend=SRnew, yend=factor(UID)), 
                  size=2, color="#CC0000", alpha=.25) +
+    geom_segment(aes(x=PLnew, xend=PRnew, yend=factor(UID)), 
+                 size=2, color="#00a841", alpha=.25) +
     geom_point(aes(x=Emid, y=factor(UID)), size=0.5, color="#0072B2") +
     geom_point(aes(x=Smid, y=factor(UID)), size=0.5, color="#CC0000") +
+    geom_point(aes(x=Pmid, y=factor(UID)), size=0.5, color="#00a841") +
     geom_segment(aes(x=Emid, xend=Smid, yend=factor(UID)), size=0.33, color="#999999") +
     #ggtitle("Exposure and symptom onset windows") +
     scale_x_continuous("Days from last possible exposure") +
@@ -231,6 +238,7 @@ ggplot(dat_sum, aes(y=factor(UID))) +
     theme(axis.text.y = element_blank(),
           axis.ticks.y= element_blank(),
           axis.text.x=element_text(color="black"))
+
 ```
 
 
