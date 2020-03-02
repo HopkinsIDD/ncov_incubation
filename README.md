@@ -1,9 +1,9 @@
-\[![DOI](https://doi.org/10.5281/zenodo.3692048)
+[![DOI](https://zenodo.org/badge/236349745.svg)](https://zenodo.org/badge/latestdoi/236349745)
 
 Real-time estimation of the novel coronavirus incubation time
 =============================================================
 
-Updated: Fri Feb 28 17:43:33 2020
+Updated: Mon Mar 2 11:07:02 2020
 
 [Read the medRxiv
 preprint](https://www.medrxiv.org/content/10.1101/2020.02.02.20020016v1)
