@@ -825,8 +825,8 @@ knitr::kable(am_tbl_dat,
 #           font.label=list(size=13, face="bold"), hjust=-0.35, vjust=5.5)
 
 label_dat <- tibble(label_text=c("Mean", "1st percentile", "99th percentile"),
-                    label_x=c(21, 5, 21),
-                    label_y=c(0.001, 0.001, 0.1))
+                    label_x=c(18, 7, 21),
+                    label_y=c(0.001, 0.001, 0.03))
 
 emi_dat %>% 
     filter(phi==1) %>% 
